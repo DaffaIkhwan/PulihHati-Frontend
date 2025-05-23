@@ -1,5 +1,3 @@
-//todo: navbar
-// src/components/Navbar.jsx
 import { NavLink } from "react-router-dom";
 
 const Navbar = () => {

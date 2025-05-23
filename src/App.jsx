@@ -5,7 +5,7 @@ import viteLogo from "/vite.svg";
 
 export default function App() {
   return (
-    <>
+     <>
       <Navbar />
 
       <Routes>
