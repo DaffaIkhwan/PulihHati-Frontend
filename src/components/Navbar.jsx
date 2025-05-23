@@ -1,6 +1,8 @@
-import { NavLink } from "react-router-dom";
+import { NavLink} from "react-router-dom";
 
 const Navbar = () => {
+  
+  
   const navItems = [
     { name: "Service", to: "/service" },
     { name: "About us", to: "/about" },
