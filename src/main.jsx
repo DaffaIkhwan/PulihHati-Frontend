@@ -4,15 +4,19 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import App from './App';
 import './index.css';
 import SafeSpace from './components/SafeSpace';
+import Login from './components/Login';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Router>
       <Routes>
-        <Route path="/app/*" element={<App />} />
+        <Route path="/" element={<App />} />
         <Route path="/safespace" element={<SafeSpace />} />
-        {/* Redirect to SafeSpace as default route */}
-        <Route path="*" element={<Navigate to="/safespace" replace />} />
+        <Route path="/about" element={<div className="p-8">About Us Page</div>} />
+        <Route path="/signin" element={<Login />} />
+        <Route path="/signup" element={<div className="p-8">Sign Up Page</div>} />
+        {/* Redirect any unknown routes to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   </React.StrictMode>
