@@ -27,6 +27,7 @@ export default function App() {
             </div>
           }
         />
+        <Route path="/" element={<Home />} />
         <Route path="/service" element={<div className="p-8">Service Page</div>} />
         <Route path="/about" element={<div className="p-8">About Us Page</div>} />
         <Route path="/signin" element={<div className="p-8">Sign In Page</div>} />
