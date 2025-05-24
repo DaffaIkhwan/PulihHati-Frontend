@@ -1,7 +1,7 @@
 import { useState } from 'react';
 // import cloud1 from '../assets/cloud1.png';
 // import cloud2 from '../assets/cloud2.png';
-// import hero from '../assets/hero.png';
+import hero from '/hero-login.png';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -36,10 +36,11 @@ const LoginForm = () => {
       {/* Background decorations */}
       {/* <img src={cloud1} className="absolute top-6 left-6 w-20" />
       <img src={cloud2} className="absolute top-10 right-10 w-24" />
-      <img src={cloud2} className="absolute bottom-20 left-10 w-24" />
-      <img src={hero} className="absolute bottom-0 right-0 w-64 md:w-80" /> */}
+      <img src={cloud2} className="absolute bottom-20 left-10 w-24" /> */}
+      {/* <img src={hero} className="absolute bottom-0 right-0 w-64 md:w-80" />  */}
+      <img src={hero} className="absolute bottom-0 right-0 w-80 md:w-[28rem] lg:w-[32rem]" />
 
-      <div className="relative bg-white rounded-2xl shadow-lg p-8 w-full max-w-md z-10">
+      <div className="relative bg-white rounded-2xl shadow-lg p-10 w-full max-w-xl z-10">
         <h2 className="text-3xl font-bold text-center text-[#251404] mb-6">WELCOME</h2>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -48,7 +49,7 @@ const LoginForm = () => {
             <label htmlFor="email" className="block text-sm font-semibold text-[#251404] mb-1">
               Email Address
             </label>
-            <div className={`flex items-center border ${errors.email ? 'border-red-500' : 'border-[#B8C28C]'} rounded-full px-4 py-2`}>
+            <div className={`flex items-center border ${errors.email ? 'border-red-500' : 'border-[#B8C28C]'} rounded-full px-4 py-3`}>
               <span className="material-symbols-outlined text-[#251404] mr-2">mail</span>
               <input
                 type="email"
@@ -68,7 +69,7 @@ const LoginForm = () => {
             <label htmlFor="password" className="block text-sm font-semibold text-[#251404] mb-1">
               Password
             </label>
-            <div className={`flex items-center border ${errors.password ? 'border-red-500' : 'border-[#B8C28C]'} rounded-full px-4 py-2`}>
+            <div className={`flex items-center border ${errors.password ? 'border-red-500' : 'border-[#B8C28C]'} rounded-full px-4 py-3`}>
               <span className="material-symbols-outlined text-[#251404] mr-2">lock</span>
               <input
                 type={showPassword ? 'text' : 'password'}
