@@ -2,6 +2,8 @@ import { useState } from 'react';
 // import cloud1 from '../assets/cloud1.png';
 // import cloud2 from '../assets/cloud2.png';
 import hero from '/hero-login.png';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -50,7 +52,7 @@ const LoginForm = () => {
               Email Address
             </label>
             <div className={`flex items-center border ${errors.email ? 'border-red-500' : 'border-[#B8C28C]'} rounded-full px-4 py-3`}>
-              <span className="material-symbols-outlined text-[#251404] mr-2">mail</span>
+              <Mail className="w-5 h-5 text-[#251404] mr-2" />
               <input
                 type="email"
                 id="email"
@@ -70,7 +72,7 @@ const LoginForm = () => {
               Password
             </label>
             <div className={`flex items-center border ${errors.password ? 'border-red-500' : 'border-[#B8C28C]'} rounded-full px-4 py-3`}>
-              <span className="material-symbols-outlined text-[#251404] mr-2">lock</span>
+            <Lock className="w-5 h-5 text-[#251404] mr-2" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
@@ -80,12 +82,18 @@ const LoginForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <span
-                className="material-symbols-outlined text-[#A0A0A0] ml-2 cursor-pointer"
+              <button
+                type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
+                className="ml-2"
               >
-                {showPassword ? 'visibility' : 'visibility_off'}
-              </span>
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5 text-[#A0A0A0]" />
+                ) : (
+                  <Eye className="w-5 h-5 text-[#A0A0A0]" />
+                )}
+              </button>
+
             </div>
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
           </div>
@@ -95,7 +103,7 @@ const LoginForm = () => {
             type="submit"
             className="bg-[#251404] text-white font-semibold rounded-full w-full py-3 flex items-center justify-center gap-2 hover:bg-[#4F3422] transition-colors duration-300"
           >
-            Sign In <span className="material-symbols-outlined">arrow_forward</span>
+            Sign In <ArrowRight className="w-4 h-4" />
           </button>
         </form>
       </div>
