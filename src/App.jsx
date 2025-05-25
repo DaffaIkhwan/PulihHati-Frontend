@@ -6,7 +6,7 @@ export default function App() {
   return (
     <>
       <Navbar />
-<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-center px-2 sm:px-4 py-8 w-full">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-center px-2 sm:px-4 py-8 w-full">
         <div className="flex justify-center items-center space-x-2 sm:space-x-4">
           <img alt="Vite Logo" height="80" src={viteLogo} width="80" />
           <img alt="React Logo" height="80" src={reactLogo} width="80" />
