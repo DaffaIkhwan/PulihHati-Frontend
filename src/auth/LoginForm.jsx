@@ -1,17 +1,18 @@
 import { useState } from 'react';
-// import cloud1 from '../assets/cloud1.png';
-// import cloud2 from '../assets/cloud2.png';
+import { useNavigate } from 'react-router-dom';
 import hero from '/hero-login.png';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
@@ -28,22 +29,50 @@ const LoginForm = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // ✅ Proceed with login
-      console.log({ email, password });
+      setIsLoading(true);
+      setApiError('');
+      
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Login failed');
+        }
+
+        // Save token and user data to localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirect to home page instead of dashboard
+        navigate('/');
+      } catch (error) {
+        setApiError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4">
-      {/* Background decorations */}
-      {/* <img src={cloud1} className="absolute top-6 left-6 w-20" />
-      <img src={cloud2} className="absolute top-10 right-10 w-24" />
-      <img src={cloud2} className="absolute bottom-20 left-10 w-24" /> */}
-      {/* <img src={hero} className="absolute bottom-0 right-0 w-64 md:w-80" />  */}
       <img src={hero} className="absolute bottom-0 right-0 w-80 md:w-[28rem] lg:w-[32rem]" />
 
       <div className="relative bg-white rounded-2xl shadow-lg p-10 w-full max-w-xl z-10">
         <h2 className="text-3xl font-bold text-center text-[#251404] mb-6">WELCOME</h2>
+
+        {apiError && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {apiError}
+          </div>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           {/* Email */}
@@ -93,7 +122,6 @@ const LoginForm = () => {
                   <Eye className="w-5 h-5 text-[#A0A0A0]" />
                 )}
               </button>
-
             </div>
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
           </div>
@@ -101,9 +129,10 @@ const LoginForm = () => {
           {/* Submit */}
           <button
             type="submit"
-            className="bg-[#251404] text-white font-semibold rounded-full w-full py-3 flex items-center justify-center gap-2 hover:bg-[#4F3422] transition-colors duration-300"
+            disabled={isLoading}
+            className="bg-[#251404] text-white font-semibold rounded-full w-full py-3 flex items-center justify-center gap-2 hover:bg-[#4F3422] transition-colors duration-300 disabled:bg-gray-400"
           >
-            Sign In <ArrowRight className="w-4 h-4" />
+            {isLoading ? 'Signing In...' : 'Sign In'} {!isLoading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
       </div>
@@ -111,8 +140,4 @@ const LoginForm = () => {
   );
 };
 
-<<<<<<< HEAD
 export default LoginForm;
-=======
-export default LoginForm;
->>>>>>> bd990fcd7a121ef0ec897a6fa68ef858540f3369

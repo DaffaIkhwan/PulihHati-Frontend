@@ -1,483 +1,405 @@
-import { useState } from 'react';
-import { Search, Bell, Home as HomeIcon, ThumbsUp, MessageCircle, Bookmark, Send, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessageCircle, Heart, Bookmark, Send, X, Plus, User, Home as HomeIcon } from 'lucide-react';
+import axios from 'axios';
 
-function Home() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [newPostContent, setNewPostContent] = useState('');
+// API URL pointing to the other project
+const API_URL = 'http://localhost:5000/api';
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// API functions with better error handling
+const getPosts = async () => {
+  try {
+    console.log('Fetching posts...');
+    const response = await api.get('/safespace/posts');
+    console.log('Posts response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch posts. Please try again later.');
+  }
+};
+
+const createPost = async (content) => {
+  try {
+    const response = await api.post('/safespace/posts', { content });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating post:', error);
+    throw new Error(error.response?.data?.message || 'Failed to create post. Please try again later.');
+  }
+};
+
+const likePost = async (id) => {
+  try {
+    const response = await api.put(`/safespace/posts/${id}/like`);
+    return response.data;
+  } catch (error) {
+    console.error('Error liking post:', error);
+    throw new Error(error.response?.data?.message || 'Failed to like post. Please try again later.');
+  }
+};
+
+const addComment = async (postId, content) => {
+  try {
+    const response = await api.post(`/safespace/posts/${postId}/comments`, { content });
+    return response.data;
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    throw new Error(error.response?.data?.message || 'Failed to add comment. Please try again later.');
+  }
+};
+
+const toggleBookmark = async (postId) => {
+  try {
+    const response = await api.put(`/safespace/posts/${postId}/bookmark`);
+    return response.data;
+  } catch (error) {
+    console.error('Error bookmarking post:', error);
+    throw new Error(error.response?.data?.message || 'Failed to bookmark post. Please try again later.');
+  }
+};
+
+const getBookmarkedPosts = async () => {
+  try {
+    const response = await api.get('/safespace/bookmarks');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching bookmarked posts:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch bookmarked posts. Please try again later.');
+  }
+};
+
+function SafeSpace() {
   const [activeTab, setActiveTab] = useState('home');
-  const [isNavbarCollapsed, setIsNavbarCollapsed] = useState(false);
-  
-  // Posts data
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: {
-        name: 'John Doe',
-        avatar: 'https://randomuser.me/api/portraits/men/1.jpg'
-      },
-      timePosted: '2h ago',
-      content: 'Just finished a great book on mindfulness and mental health. Highly recommend it for anyone looking to improve their well-being!',
-      likes: 24,
-      comments: [],
-      shares: 3,
-      liked: false,
-      bookmarked: false
-    },
-    {
-      id: 2,
-      author: {
-        name: 'Jane Smith',
-        avatar: 'https://randomuser.me/api/portraits/women/2.jpg'
-      },
-      timePosted: '5h ago',
-      content: 'Today I practiced self-care by taking a long walk in nature. What are your favorite self-care activities?',
-      likes: 42,
-      comments: [
-        {
-          id: 1,
-          author: {
-            name: 'Alex Johnson',
-            avatar: 'https://randomuser.me/api/portraits/men/3.jpg'
-          },
-          content: 'I love meditation and journaling!',
-          timePosted: '4h ago'
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [newPost, setNewPost] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [user, setUser] = useState({});
+
+  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        setUser(response.data);
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Fetch posts when component mounts or tab changes
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let data;
+        if (activeTab === 'saved') {
+          data = await getBookmarkedPosts();
+        } else {
+          data = await getPosts();
         }
-      ],
-      shares: 7,
-      liked: true,
-      bookmarked: true
-    }
-  ]);
-  
-  // Notifications data
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'like',
-      user: {
-        name: 'Sarah Johnson',
-        avatar: 'https://randomuser.me/api/portraits/women/22.jpg'
-      },
-      content: 'liked your post',
-      postSnippet: 'Excited to share that I\'ve started a new position...',
-      time: '2h ago',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'comment',
-      user: {
-        name: 'Mike Wilson',
-        avatar: 'https://randomuser.me/api/portraits/men/34.jpg'
-      },
-      content: 'commented on your post',
-      postSnippet: 'Just published my thoughts on the future of product management...',
-      comment: 'Great insights! I think AI will definitely transform how we approach product development.',
-      time: '5h ago',
-      read: true
-    },
-    {
-      id: 3,
-      type: 'mention',
-      user: {
-        name: 'Lisa Wong',
-        avatar: 'https://randomuser.me/api/portraits/women/33.jpg'
-      },
-      content: 'mentioned you in a comment',
-      postSnippet: 'Breaking: Major technology company announces new AI platform...',
-      comment: 'I think @Your Name would have some interesting thoughts on this!',
-      time: '1d ago',
-      read: false
-    }
-  ]);
-  
-  // Mark notification as read
-  const markAsRead = (notificationId) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === notificationId 
-        ? { ...notification, read: true } 
-        : notification
-    ));
-  };
-  
-  // Mark all notifications as read
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notification => ({ ...notification, read: true })));
-  };
-  
-  // Count unread notifications
-  const unreadCount = notifications.filter(notification => !notification.read).length;
-  
-  // Toggle like status for a post
-  const toggleLike = (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const newLikedStatus = !post.liked;
-        return {
-          ...post,
-          liked: newLikedStatus,
-          likes: newLikedStatus ? post.likes + 1 : post.likes - 1
-        };
+        
+        // Handle different data formats
+        if (!data) {
+          setPosts([]);
+        } else if (Array.isArray(data)) {
+          setPosts(data);
+        } else if (data.posts && Array.isArray(data.posts)) {
+          setPosts(data.posts);
+        } else if (typeof data === 'object') {
+          // If it's a single post object
+          setPosts([data]);
+        } else {
+          console.error('Unexpected data format:', data);
+          setError('Received unexpected data format from server');
+          setPosts([]);
+        }
+      } catch (err) {
+        console.error('Error fetching posts:', err);
+        setError('Failed to fetch posts. Please try again later.');
+      } finally {
+        setLoading(false);
       }
-      return post;
-    }));
-  };
-  
-  // Toggle bookmark status for a post
-  const toggleBookmark = (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          bookmarked: !post.bookmarked
-        };
-      }
-      return post;
-    }));
+    };
+
+    fetchData();
+  }, [activeTab]);
+
+  const handleNewPost = async (e) => {
+    e.preventDefault();
+    if (!newPost.trim()) return;
+    
+    try {
+      setLoading(true);
+      const createdPost = await createPost(newPost);
+      setPosts([createdPost, ...posts]);
+      setNewPost('');
+    } catch (err) {
+      console.error('Error creating post:', err);
+      setError('Failed to create post. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Open comment modal
+  const toggleLike = async (postId) => {
+    try {
+      const updatedLikes = await likePost(postId);
+      setPosts(posts.map(post => 
+        (post._id === postId || post.id === postId)
+          ? { ...post, likes: updatedLikes } 
+          : post
+      ));
+    } catch (err) {
+      console.error('Error liking post:', err);
+      setError('Failed to like post. Please try again.');
+    }
+  };
+
+  const handleBookmark = async (postId) => {
+    try {
+      const updatedBookmarks = await toggleBookmark(postId);
+      
+      // Update the bookmarked status in the posts array
+      setPosts(posts.map(post => {
+        if (post._id === postId || post.id === postId) {
+          // Check if the post is now bookmarked or not
+          const isBookmarked = updatedBookmarks.includes(post._id || post.id);
+          return { ...post, bookmarked: isBookmarked };
+        }
+        return post;
+      }));
+    } catch (err) {
+      console.error('Error bookmarking post:', err);
+      setError('Failed to bookmark post. Please try again.');
+    }
+  };
+
   const openCommentModal = (post) => {
     setSelectedPost(post);
-    document.body.style.overflow = 'hidden';
+    setNewComment('');
   };
-  
-  // Close comment modal
+
   const closeCommentModal = () => {
     setSelectedPost(null);
-    document.body.style.overflow = 'auto';
+    setNewComment('');
   };
 
-  // Handle new post submission
-  const handleNewPost = (e) => {
+  const handleNewComment = async (e) => {
     e.preventDefault();
+    if (!newComment.trim() || !selectedPost) return;
     
-    if (!newPostContent.trim()) return;
-    
-    // Create new post object
-    const newPost = {
-      id: Date.now(), // Use timestamp as unique ID
-      author: {
-        name: 'Your Name',
-        avatar: 'https://randomuser.me/api/portraits/lego/5.jpg'
-      },
-      timePosted: 'Just now',
-      content: newPostContent,
-      likes: 0,
-      comments: [],
-      shares: 0,
-      liked: false,
-      bookmarked: false
-    };
-    
-    // Add new post to the beginning of posts array
-    setPosts([newPost, ...posts]);
-    
-    // Clear input field
-    setNewPostContent('');
-  };
-
-  // Get posts to display based on active tab
-  const getDisplayedPosts = () => {
-    if (activeTab === 'saved') {
-      return posts.filter(post => post.bookmarked);
+    try {
+      const postId = selectedPost._id || selectedPost.id;
+      const updatedComments = await addComment(postId, newComment);
+      
+      // Update the comments in the selected post and in the posts array
+      setSelectedPost({
+        ...selectedPost,
+        comments: updatedComments
+      });
+      
+      setPosts(posts.map(post => 
+        (post._id === postId || post.id === postId)
+          ? { ...post, comments: updatedComments } 
+          : post
+      ));
+      
+      setNewComment('');
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      setError('Failed to add comment. Please try again.');
     }
-    return posts;
-  };
-
-  // Toggle navbar collapse state
-  const toggleNavbar = () => {
-    setIsNavbarCollapsed(!isNavbarCollapsed);
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex">
-      {/* Left Sidebar - Navigation */}
-      <aside className={`${isNavbarCollapsed ? 'w-16' : 'w-16 md:w-64'} bg-white shadow-sm fixed h-full left-0 top-0 z-10 flex flex-col transition-all duration-300`}>
-        <div className="p-4 border-b flex justify-between items-center">
-          {!isNavbarCollapsed && (
-            <h1 className="text-2xl font-serif font-bold text-blue-600 italic hidden md:block">Pulih Hati</h1>
-          )}
-          <h1 className={`text-xl font-serif font-bold text-blue-600 italic ${!isNavbarCollapsed ? 'md:hidden' : ''}`}>PH</h1>
-          
-          <button 
-            onClick={toggleNavbar} 
-            className="text-gray-500 hover:text-gray-700 hidden md:block"
-          >
-            {isNavbarCollapsed ? 
-              <ChevronRight className="h-5 w-5" /> : 
-              <ChevronLeft className="h-5 w-5" />
-            }
-          </button>
-        </div>
-        
-        {/* Search in sidebar - Only show when expanded */}
-        {!isNavbarCollapsed && (
-          <div className="px-2 py-3 border-b hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-2 top-2 text-gray-500 h-5 w-5" />
-              <input
-                type="text"
-                className="bg-gray-100 pl-9 pr-2 py-2 rounded-md w-full text-sm"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+    <div className="min-h-screen bg-gray-100">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <h1 className="text-xl font-bold text-blue-600">Safe Space</h1>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <span className="text-gray-700 mr-2">{user.name}</span>
+              <img 
+                src={user.avatar || "https://randomuser.me/api/portraits/lego/5.jpg"} 
+                alt="Your Profile" 
+                className="h-8 w-8 rounded-full" 
               />
             </div>
           </div>
-        )}
-        
-        <nav className="p-2 flex-1 overflow-y-auto">
-          <ul className="space-y-2">
-            <li>
-              <a 
-                href="#" 
-                className={`flex items-center p-2 ${activeTab === 'home' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'} rounded-md`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveTab('home');
-                }}
-              >
-                <HomeIcon className="h-6 w-6" />
-                {!isNavbarCollapsed && <span className="ml-3 hidden md:block">Home</span>}
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#" 
-                className={`flex items-center p-2 ${activeTab === 'notifications' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'} rounded-md relative`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveTab('notifications');
-                }}
-              >
-                <Bell className="h-6 w-6" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-                {!isNavbarCollapsed && <span className="ml-3 hidden md:block">Notifications</span>}
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#" 
-                className={`flex items-center p-2 ${activeTab === 'saved' ? 'bg-gray-200 text-black' : 'text-gray-500 hover:bg-gray-100'} rounded-md`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveTab('saved');
-                }}
-              >
-                <Bookmark className="h-6 w-6" />
-                {!isNavbarCollapsed && <span className="ml-3 hidden md:block">Saved</span>}
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#" 
-                className={`flex items-center p-2 ${activeTab === 'profile' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'} rounded-md`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveTab('profile');
-                }}
-              >
-                <img src="https://randomuser.me/api/portraits/lego/5.jpg" alt="Profile" className="h-6 w-6 rounded-full" />
-                {!isNavbarCollapsed && <span className="ml-3 hidden md:block">Me</span>}
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </aside>
+        </div>
+      </nav>
 
       {/* Main Content */}
-      <div className={`${isNavbarCollapsed ? 'ml-16' : 'ml-16 md:ml-64'} flex-1 transition-all duration-300`}>
-        {/* Main Feed - Full width */}
-        <main className="max-w-4xl lg:max-w-5xl mx-auto px-4 py-6">
-          {/* Page Title */}
-          <h2 className="text-2xl font-bold mb-4 text-black">
-            {activeTab === 'saved' ? 'Saved Posts' : 
-             activeTab === 'notifications' ? 'Notifications' : 
-             activeTab === 'profile' ? 'My Profile' : 'Home'}
-          </h2>
-          
-          {/* Create Post - Only show on home tab */}
-          {activeTab === 'home' && (
-            <div className="bg-white rounded-lg shadow mb-4 p-4">
-              <form onSubmit={handleNewPost}>
-                <div className="flex items-center">
-                  <img src="https://randomuser.me/api/portraits/lego/5.jpg" alt="Profile" className="h-12 w-12 rounded-full mr-2" />
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      className="bg-gray-100 hover:bg-gray-200 rounded-full px-4 py-3 text-gray-700 w-full"
-                      placeholder="Start a post"
-                      value={newPostContent}
-                      onChange={(e) => setNewPostContent(e.target.value)}
-                    />
-                    <button 
-                      type="submit"
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
-                    >
-                      <Send className="h-5 w-5 transform rotate-90" />
-                    </button>
-                  </div>
-                </div>
-              </form>
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        {/* Tabs */}
+        <div className="flex border-b mb-6">
+          <button
+            className={`px-4 py-2 font-medium ${activeTab === 'home' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('home')}
+          >
+            <HomeIcon className="h-5 w-5 inline mr-1" />
+            <span>Home</span>
+          </button>
+          <button
+            className={`px-4 py-2 font-medium ${activeTab === 'saved' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('saved')}
+          >
+            <Bookmark className="h-5 w-5 inline mr-1" />
+            <span>Saved</span>
+          </button>
+          <button
+            className={`px-4 py-2 font-medium ${activeTab === 'profile' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('profile')}
+          >
+            <User className="h-5 w-5 inline mr-1" />
+            <span>Profile</span>
+          </button>
+        </div>
+
+        <main>
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+              {error}
             </div>
           )}
 
-          {/* Notifications - Only show on notifications tab */}
-          {activeTab === 'notifications' && (
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-4 border-b flex justify-between items-center">
-                <h3 className="font-medium text-black">Recent Notifications</h3>
-                {unreadCount > 0 && (
-                  <button 
-                    onClick={markAllAsRead}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    Mark all as read
-                  </button>
-                )}
-              </div>
-              
-              <div className="divide-y">
-                {notifications.length > 0 ? (
-                  notifications.map(notification => (
-                    <div 
-                      key={notification.id} 
-                      className={`p-4 hover:bg-gray-50 ${!notification.read ? 'bg-blue-50' : ''}`}
-                      onClick={() => markAsRead(notification.id)}
-                    >
-                      <div className="flex items-start">
-                        <img 
-                          src={notification.user.avatar} 
-                          alt={notification.user.name} 
-                          className="h-10 w-10 rounded-full mr-3"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm">
-                              <span className="font-medium text-black">{notification.user.name}</span>
-                              <span className="text-gray-600"> {notification.content}</span>
-                            </p>
-                            <span className="text-xs text-gray-500">{notification.time}</span>
-                          </div>
-                          
-                          {notification.postSnippet && (
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                              &quot;{notification.postSnippet}&quot;
-                            </p>
-                          )}
-                          
-                          {notification.comment && (
-                            <p className="text-xs text-gray-600 mt-1 bg-gray-100 p-2 rounded">
-                              {notification.comment}
-                            </p>
-                          )}
+          {/* Home Tab */}
+          {(activeTab === 'home' || activeTab === 'saved') && (
+            <div className="space-y-6">
+              {/* New Post Form (only on home tab) */}
+              {activeTab === 'home' && (
+                <div className="bg-white rounded-lg shadow p-4">
+                  <form onSubmit={handleNewPost}>
+                    <div className="flex items-start">
+                      <img 
+                        src={user.avatar || "https://randomuser.me/api/portraits/lego/5.jpg"} 
+                        alt="Your Profile" 
+                        className="h-10 w-10 rounded-full mr-2" 
+                      />
+                      <div className="flex-1">
+                        <textarea
+                          className="w-full border border-gray-200 rounded-lg p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="What's on your mind?"
+                          rows="3"
+                          value={newPost}
+                          onChange={(e) => setNewPost(e.target.value)}
+                        ></textarea>
+                        <div className="flex justify-end mt-2">
+                          <button 
+                            type="submit"
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center hover:bg-blue-700"
+                            disabled={!newPost.trim() || loading}
+                          >
+                            <Plus className="h-5 w-5 mr-1" />
+                            <span>Post</span>
+                          </button>
                         </div>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center">
-                    <Bell className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-xl font-medium text-gray-700 mb-2">No notifications yet</h3>
-                    <p className="text-gray-500">When you get notifications, they&apos;ll show up here</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+                  </form>
+                </div>
+              )}
 
-          {/* Posts Feed - Only show on home tab */}
-          {activeTab === 'home' && (
-            <div className="space-y-4">
-              {getDisplayedPosts().map(post => (
-                <article key={post.id} className="bg-white rounded-lg shadow">
-                  <div className="p-4">
-                    <div className="flex items-start">
-                      <img src={post.author.avatar} alt={post.author.name} className="h-12 w-12 rounded-full mr-2" />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-black">{post.author.name}</h3>
-                        <p className="text-xs text-gray-500">{post.timePosted}</p>
-                      </div>
-                      <button className="text-gray-500">•••</button>
-                    </div>
-                    <div className="mt-3">
-                      <p className="text-black">{post.content}</p>
-                    </div>
-                  </div>
-                  <div className="px-4 py-2 border-t border-gray-100">
-                    <div className="flex justify-between">
-                      <button 
-                        className={`flex items-center px-2 py-1 rounded ${post.liked ? 'text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
-                        onClick={() => toggleLike(post.id)}
-                      >
-                        <ThumbsUp className={`h-5 w-5 mr-1 ${post.liked ? 'fill-current' : ''}`} />
-                        <span>{post.likes > 0 ? post.likes : 'Like'}</span>
-                      </button>
-                      <button 
-                        className="text-gray-500 flex items-center hover:bg-gray-100 px-2 py-1 rounded"
-                        onClick={() => openCommentModal(post)}
-                      >
-                        <MessageCircle className="h-5 w-5 mr-1" />
-                        <span>{post.comments.length > 0 ? post.comments.length : 'Comment'}</span>
-                      </button>
-                      <button 
-                        className={`flex items-center px-2 py-1 rounded ${post.bookmarked ? 'text-black' : 'text-gray-500 hover:bg-gray-100'}`}
-                        onClick={() => toggleBookmark(post.id)}
-                      >
-                        <Bookmark className={`h-5 w-5 mr-1 ${post.bookmarked ? 'fill-current' : ''}`} />
-                        <span>Save</span>
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-          
-          {/* Saved Posts - Only show on saved tab */}
-          {activeTab === 'saved' && (
-            <div className="space-y-4">
-              {getDisplayedPosts().length > 0 ? (
-                getDisplayedPosts().map(post => (
-                  <article key={post.id} className="bg-white rounded-lg shadow">
+              {/* Loading State */}
+              {loading && activeTab !== 'profile' && (
+                <div className="text-center py-10">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+                  <p className="mt-2 text-gray-500">Loading posts...</p>
+                </div>
+              )}
+
+              {/* Posts */}
+              {!loading && posts.length > 0 ? (
+                posts.map(post => (
+                  <article key={post._id} className="bg-white rounded-lg shadow">
                     <div className="p-4">
                       <div className="flex items-start">
-                        <img src={post.author.avatar} alt={post.author.name} className="h-12 w-12 rounded-full mr-2" />
-                        <div className="flex-1">
-                          <h3 className="font-medium text-black">{post.author.name}</h3>
-                          <p className="text-xs text-gray-500">{post.timePosted}</p>
+                        <img 
+                          src={post.author?.avatar || "https://randomuser.me/api/portraits/lego/1.jpg"} 
+                          alt={post.author?.name} 
+                          className="h-10 w-10 rounded-full mr-2" 
+                        />
+                        <div>
+                          <h3 className="font-medium text-black">{post.author?.name}</h3>
+                          <p className="text-xs text-gray-500">
+                            {new Date(post.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
                         </div>
-                        <button className="text-gray-500">•••</button>
                       </div>
                       <div className="mt-3">
                         <p className="text-black">{post.content}</p>
                       </div>
-                    </div>
-                    <div className="px-4 py-2 border-t border-gray-100">
-                      <div className="flex justify-between">
+                      <div className="mt-4 flex space-x-2">
                         <button 
-                          className={`flex items-center px-2 py-1 rounded ${post.liked ? 'text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
-                          onClick={() => toggleLike(post.id)}
+                          className={`flex items-center px-2 py-1 rounded ${post.likes?.some(like => like.user === user.id) ? 'text-red-500' : 'text-gray-500 hover:bg-gray-100'}`}
+                          onClick={() => toggleLike(post._id)}
                         >
-                          <ThumbsUp className={`h-5 w-5 mr-1 ${post.liked ? 'fill-current' : ''}`} />
-                          <span>{post.likes > 0 ? post.likes : 'Like'}</span>
+                          <Heart className={`h-5 w-5 mr-1 ${post.likes?.some(like => like.user === user.id) ? 'fill-current' : ''}`} />
+                          <span>
+                            {Array.isArray(post.likes) 
+                              ? post.likes.length > 0 
+                                ? post.likes.length 
+                                : 'Like'
+                              : 'Like'}
+                          </span>
                         </button>
                         <button 
                           className="text-gray-500 flex items-center hover:bg-gray-100 px-2 py-1 rounded"
                           onClick={() => openCommentModal(post)}
                         >
                           <MessageCircle className="h-5 w-5 mr-1" />
-                          <span>{post.comments.length > 0 ? post.comments.length : 'Comment'}</span>
+                          <span>
+                            {Array.isArray(post.comments) 
+                              ? post.comments.length > 0 
+                                ? post.comments.length 
+                                : 'Comment'
+                              : 'Comment'}
+                          </span>
                         </button>
                         <button 
                           className={`flex items-center px-2 py-1 rounded ${post.bookmarked ? 'text-black' : 'text-gray-500 hover:bg-gray-100'}`}
-                          onClick={() => toggleBookmark(post.id)}
+                          onClick={() => handleBookmark(post._id)}
                         >
                           <Bookmark className={`h-5 w-5 mr-1 ${post.bookmarked ? 'fill-current' : ''}`} />
                           <span>Save</span>
@@ -487,33 +409,61 @@ function Home() {
                   </article>
                 ))
               ) : (
-                <div className="bg-white rounded-lg shadow p-8 text-center">
-                  <Bookmark className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-xl font-medium text-gray-700 mb-2">No saved posts yet</h3>
-                  <p className="text-gray-500">Items you save will appear here</p>
-                </div>
+                !loading && (
+                  <div className="bg-white rounded-lg shadow p-8 text-center">
+                    {activeTab === 'saved' ? (
+                      <>
+                        <Bookmark className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-xl font-medium text-gray-700 mb-2">No saved posts yet</h3>
+                        <p className="text-gray-500">Items you save will appear here</p>
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-xl font-medium text-gray-700 mb-2">No posts yet</h3>
+                        <p className="text-gray-500">Be the first to share something!</p>
+                      </>
+                    )}
+                  </div>
+                )
               )}
             </div>
           )}
           
-          {/* Profile - Only show on profile tab */}
-          {activeTab === 'profile' && (
+          {/* Profile */}
+          {activeTab === 'profile' && !loading && (
             <div className="bg-white rounded-lg shadow">
               <div className="p-6 text-center border-b">
                 <img 
-                  src="https://randomuser.me/api/portraits/lego/5.jpg" 
+                  src={user.avatar || "https://randomuser.me/api/portraits/lego/5.jpg"} 
                   alt="Your Profile" 
-                  className="h-24 w-24 rounded-full mx-auto mb-4"
+                  className="h-24 w-24 rounded-full mx-auto mb-4" 
                 />
-                <h3 className="text-xl font-bold text-black">Your Name</h3>
-                <p className="text-gray-600">Software Developer</p>
+                <h3 className="text-xl font-bold text-black">{user.name}</h3>
+                <p className="text-gray-600">{user.email}</p>
               </div>
-              
               <div className="p-6">
                 <h4 className="text-lg font-medium text-black mb-4">Your Activity</h4>
-                <p className="text-gray-600 text-center py-8">
-                  Your activity stats will appear here
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <h5 className="text-gray-500 text-sm mb-1">Posts</h5>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {posts.filter(post => post.author?._id === user.id).length}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <h5 className="text-gray-500 text-sm mb-1">Comments</h5>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {posts.reduce((count, post) => count + (post.comments?.filter(comment => comment.author?._id === user.id).length || 0), 0)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <h5 className="text-gray-500 text-sm mb-1">Bookmarks</h5>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {posts.filter(post => post.bookmarked).length}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -524,65 +474,94 @@ function Home() {
       {selectedPost && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-semibold text-black">Post</h2>
-              <button 
-                onClick={closeCommentModal}
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <button onClick={closeCommentModal} className="text-gray-500 hover:text-gray-700">
                 <X className="h-6 w-6" />
               </button>
             </div>
-            
-            {/* Modal Content - Post */}
             <div className="p-4 border-b overflow-y-auto">
               <div className="flex items-start">
-                <img src={selectedPost.author.avatar} alt={selectedPost.author.name} className="h-12 w-12 rounded-full mr-2" />
+                <img 
+                  src={selectedPost.author?.avatar || "https://randomuser.me/api/portraits/lego/1.jpg"} 
+                  alt={selectedPost.author?.name} 
+                  className="h-12 w-12 rounded-full mr-2" 
+                />
                 <div className="flex-1">
-                  <h3 className="font-medium text-black">{selectedPost.author.name}</h3>
-                  <p className="text-xs text-gray-500">{selectedPost.timePosted}</p>
+                  <h3 className="font-medium text-black">{selectedPost.author?.name}</h3>
+                  <p className="text-xs text-gray-500">
+                    {new Date(selectedPost.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
                   <div className="mt-3">
                     <p className="text-black">{selectedPost.content}</p>
                   </div>
                 </div>
               </div>
             </div>
-            
-            {/* Modal Content - Comments */}
             <div className="flex-1 overflow-y-auto p-4">
               <h3 className="font-medium text-black mb-4">Comments</h3>
-              <div className="space-y-4">
-                {selectedPost.comments.map(comment => (
-                  <div key={comment.id} className="flex items-start">
-                    <img src={comment.author.avatar} alt={comment.author.name} className="h-10 w-10 rounded-full mr-2" />
-                    <div className="flex-1 bg-gray-100 p-3 rounded-lg">
-                      <div className="flex justify-between">
-                        <h4 className="font-medium text-black">{comment.author.name}</h4>
-                        <span className="text-xs text-gray-500">{comment.timePosted}</span>
+              {Array.isArray(selectedPost.comments) && selectedPost.comments.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedPost.comments.map(comment => (
+                    <div key={comment._id} className="flex items-start">
+                      <img 
+                        src={comment.author?.avatar || "https://randomuser.me/api/portraits/lego/2.jpg"} 
+                        alt={comment.author?.name} 
+                        className="h-10 w-10 rounded-full mr-2" 
+                      />
+                      <div className="flex-1 bg-gray-100 p-3 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-medium text-black">{comment.author?.name}</h4>
+                          <span className="text-xs text-gray-500">
+                            {new Date(comment.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-black mt-1">{comment.content}</p>
                       </div>
-                      <p className="text-sm text-black mt-1">{comment.content}</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Add Comment */}
-            <div className="p-4 border-t">
-              <div className="flex items-start">
-                <img src="https://randomuser.me/api/portraits/lego/5.jpg" alt="Your Profile" className="h-10 w-10 rounded-full mr-2" />
-                <div className="flex-1 relative">
-                  <input 
-                    type="text" 
-                    className="bg-gray-100 border border-gray-200 rounded-full px-4 py-2 w-full"
-                    placeholder="Write a comment..."
-                  />
-                  <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600">
-                    <Send className="h-5 w-5 transform rotate-90" />
-                  </button>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">No comments yet. Be the first to comment!</p>
+              )}
+            </div>
+            <div className="p-4 border-t">
+              <form onSubmit={handleNewComment}>
+                <div className="flex items-center">
+                  <img 
+                    src={user.avatar || "https://randomuser.me/api/portraits/lego/5.jpg"} 
+                    alt="Your Profile" 
+                    className="h-10 w-10 rounded-full mr-2" 
+                  />
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      className="bg-gray-100 rounded-full px-4 py-2 text-gray-700 w-full"
+                      placeholder="Write a comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                    />
+                    <button 
+                                            type="submit"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
+                      disabled={!newComment.trim()}
+                    >
+                      <Send className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -591,24 +570,7 @@ function Home() {
   );
 }
 
-export default Home;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export default SafeSpace;
 
 
 
