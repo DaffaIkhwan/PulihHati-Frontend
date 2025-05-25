@@ -6,6 +6,8 @@ import './index.css';
 import SafeSpace from './components/SafeSpace';
 import Login from './components/Login';
 import Register from './components/Register';
+import Home from "./components/Home";
+import Chatbot from './chatbot';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -18,6 +20,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/signup" element={<Register />} />
         {/* Redirect any unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/chatbot" element={<Chatbot />} />
+        <Route path="/" element={<Home />} />
+        {/* Redirect to SafeSpace as default route */}
+        <Route path="*" element={<Navigate to="/safespace" replace />} />
       </Routes>
     </Router>
   </React.StrictMode>
