@@ -4,7 +4,7 @@ import Navbar from './Navbar';
 
 function Login() {
   return (
-    <div className="min-h-screen bg-[#A1BA82] relative overflow-hidden">
+    <div className="min-h-screen bg-[#A1BA82] relative overflow-hidden pt-20">
       <Navbar />
       <LoginForm />
     </div>

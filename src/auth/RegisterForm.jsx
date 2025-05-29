@@ -19,40 +19,40 @@ export default function Register() {
   const validate = () => {
     const errs = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!formData.name?.trim()) {
       errs.name = 'Name is required';
     }
-    
+
     if (!formData.email.trim()) {
       errs.email = 'Email is required';
     } else if (!emailRegex.test(formData.email)) {
       errs.email = 'Invalid Email Address!';
     }
-    
+
     if (!formData.password.trim()) {
       errs.password = 'Password is required';
     } else if (formData.password.length < 6) {
       errs.password = 'Password must be at least 6 characters.';
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       errs.confirmPassword = 'Passwords do not match.';
     }
-    
+
     return errs;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
-    
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
     } else {
       setIsLoading(true);
       setApiError('');
-      
+
       try {
         const response = await fetch('http://localhost:5000/api/auth/register', {
           method: 'POST',
@@ -75,9 +75,10 @@ export default function Register() {
         // Save token and user data to localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Redirect to home page instead of dashboard
+
+        // Redirect to home page and refresh to update navbar
         navigate('/');
+        window.location.reload();
       } catch (error) {
         setApiError(error.message);
       } finally {
@@ -120,7 +121,7 @@ export default function Register() {
             </div>
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
-          
+
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-semibold text-[#251404] mb-1">

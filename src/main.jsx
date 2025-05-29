@@ -6,6 +6,7 @@ import SafeSpace from './components/SafeSpace';
 import Login from './components/Login';
 import Register from './components/Register';
 import Home from "./components/Home";
+import Profile from './components/ProfileNew';
 import Chatbot from './chatbot';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/" element={<Home />} />
         <Route path="/safespace" element={<SafeSpace />} />
         <Route path="/about" element={<div className="p-8">About Us Page</div>} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/signin" element={<Login />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/chatbot" element={<Chatbot />} />

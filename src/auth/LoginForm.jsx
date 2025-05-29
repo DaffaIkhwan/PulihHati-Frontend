@@ -31,7 +31,7 @@ const LoginForm = () => {
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
       setApiError('');
-      
+
       try {
         const response = await fetch('http://localhost:5000/api/auth/login', {
           method: 'POST',
@@ -50,9 +50,10 @@ const LoginForm = () => {
         // Save token and user data to localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Redirect to home page instead of dashboard
+
+        // Redirect to home page and refresh to update navbar
         navigate('/');
+        window.location.reload();
       } catch (error) {
         setApiError(error.message);
       } finally {
