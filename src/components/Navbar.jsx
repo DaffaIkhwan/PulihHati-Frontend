@@ -1,3 +1,4 @@
+// PulihHati-Frontend\src\components\Navbar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LogOut, User, Menu, X } from "lucide-react";
@@ -68,10 +69,14 @@ const Navbar = () => {
         <div className="flex flex-col p-4 pt-16">
           <NavLink 
             to="/" 
-            className="text-white font-bold px-4 py-3 mb-4 transition-colors duration-300 hover:bg-[#4F3422] rounded-full"
+            className="px-4 py-3 mb-4 transition-colors duration-300 hover:bg-[#4F3422] rounded-full flex items-center justify-center"
             onClick={handleNavigation}
           >
-            Logo
+            <img 
+              src="/logoNavbar.png" 
+              alt="PulihHati Logo" 
+              className="h-8 w-auto"
+            />
           </NavLink>
           
           {navItems.map(({ name, to }) => (
@@ -119,8 +124,15 @@ const Navbar = () => {
 
       {/* Desktop navbar */}
       <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-[#251404] px-4 py-2 rounded-full w-max hidden md:flex items-center gap-4 shadow-lg">
-        <NavLink to="/" className="text-white font-bold px-4 py-2 transition-colors duration-300 hover:bg-[#4F3422] rounded-full">
-          Logo
+        <NavLink 
+          to="/" 
+          className="px-4 py-2 transition-colors duration-300 hover:bg-[#4F3422] rounded-full flex items-center"
+        >
+          <img 
+            src="/logoNavbar.png" 
+            alt="PulihHati Logo" 
+            className="h-8 w-auto"
+          />
         </NavLink>
 
         {navItems.map(({ name, to }) => (
