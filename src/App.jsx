@@ -1,8 +1,12 @@
 import Navbar from "./components/Navbar";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
-
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 export default function App() {
+  useEffect(() => {
+    AOS.init({ once: true });
+  }, []);
   return (
     <>
       <Navbar />
