@@ -2,16 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
-import SafeSpace from './components/SafeSpace';
+import SafeSpace from './safespace';
 import Login from './components/Login';
 import Register from './components/Register';
-import Home from "./components/Home";
+import Home from './home';
 import Profile from './components/ProfileNew';
 import Chatbot from './chatbot';
+import Navbar from './components/Navbar';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Router>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/safespace" element={<SafeSpace />} />

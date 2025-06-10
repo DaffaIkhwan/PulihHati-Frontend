@@ -32,11 +32,21 @@ api.interceptors.request.use(
 // Helper function to validate and get proper avatar URL
 const getValidAvatarUrl = (avatarUrl) => {
   if (!avatarUrl) return null;
-  if (avatarUrl === 'default-avatar.jpg') return null;
   if (avatarUrl.includes('cloudinary.com') || avatarUrl.includes('res.cloudinary.com')) {
     return avatarUrl;
   }
   return null;
+};
+
+// Helper function to get initials from name
+const getInitials = (name) => {
+  if (!name) return 'A';
+  return name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 };
 
 const Profile = () => {
@@ -303,39 +313,40 @@ const Profile = () => {
               <div className="text-center">
                 {/* Avatar */}
                 <div className="relative inline-block mb-4">
-                  {avatarUrl ? (
-                    <img
-                      key={`avatar-${imageKey}`}
-                      src={`${avatarUrl}?t=${imageKey}`}
-                      alt="Profile"
-                      className="h-32 w-32 rounded-full object-cover border-4 border-amber-200"
-                    />
-                  ) : (
-                    <div className="h-32 w-32 rounded-full bg-stone-200 border-4 border-amber-200 flex items-center justify-center">
-                      <User className="h-16 w-16 text-stone-400" />
-                    </div>
-                  )}
-
-                  {/* Upload overlay when uploading */}
-                  {uploading && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                      <div className="text-white text-xs">
-                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mx-auto mb-1"></div>
-                        Uploading...
+                  <div className="relative">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={user.name}
+                        className="w-32 h-32 rounded-full object-cover border-4 border-amber-300"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 rounded-full bg-amber-100 border-4 border-amber-300 flex items-center justify-center text-amber-700 text-4xl font-medium">
+                        {getInitials(user.name)}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <label className={`absolute bottom-0 right-0 bg-gradient-to-r from-amber-600 to-amber-700 text-white p-2 rounded-full cursor-pointer hover:from-amber-700 hover:to-amber-800 transition-all duration-200 shadow-lg ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <Camera className="h-4 w-4" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                  </label>
+                    {/* Upload overlay when uploading */}
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                        <div className="text-white text-xs">
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mx-auto mb-1"></div>
+                          Uploading...
+                        </div>
+                      </div>
+                    )}
+
+                    <label className={`absolute bottom-0 right-0 bg-gradient-to-r from-amber-600 to-amber-700 text-white p-2 rounded-full cursor-pointer hover:from-amber-700 hover:to-amber-800 transition-all duration-200 shadow-lg ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <Camera className="h-4 w-4" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <h2 className="text-xl font-semibold text-stone-800 mb-2">
