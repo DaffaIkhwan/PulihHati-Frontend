@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, MessageCircle } from "lucide-react";
+import { formatCardDate, getPostDate } from '../../../../utils/dateUtils';
 
 function PostCard({ post }) {
   const getInitials = (name) => {
@@ -21,11 +22,7 @@ function PostCard({ post }) {
         <div className="flex-1">
           <h4 className="font-semibold text-stone-800 text-sm">{post?.author?.name || 'Anonymous'}</h4>
           <p className="text-xs text-stone-500">
-            {new Date(post?.created_at).toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            })}
+            {formatCardDate(getPostDate(post))}
           </p>
         </div>
       </div>

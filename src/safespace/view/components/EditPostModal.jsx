@@ -119,7 +119,7 @@ function EditPostModal({
             <button
               type="submit"
               disabled={loading || !content.trim() || content.trim() === post?.content?.trim()}
-              className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-stone-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center"
+              className="px-6 py-2.5 bg-[#251404] hover:bg-[#4F3422] disabled:bg-stone-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center"
             >
               {loading ? (
                 <>

@@ -57,12 +57,12 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [requiresAuth, setRequiresAuth] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: ''
   });
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [imageKey, setImageKey] = useState(Date.now());
 
   const navigate = useNavigate();
 
@@ -84,8 +84,7 @@ const Profile = () => {
       // Set avatar URL with proper validation
       const validAvatarUrl = getValidAvatarUrl(userData.avatar);
       setAvatarUrl(validAvatarUrl);
-      setImageKey(Date.now());
-
+      setAvatarUrl(validAvatarUrl);
       console.log('User data loaded:', userData);
     } catch (err) {
       console.error('Error fetching user data:', err);
@@ -105,12 +104,13 @@ const Profile = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/signin');
+      setRequiresAuth(true);
+      setLoading(false);
       return;
     }
 
     fetchUserData();
-  }, [fetchUserData, navigate]);
+  }, [fetchUserData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -217,10 +217,8 @@ const Profile = () => {
 
         setUser(updatedUser);
         setAvatarUrl(newAvatarUrl);
-        setImageKey(Date.now());
+        setAvatarUrl(newAvatarUrl);
         localStorage.setItem('user', JSON.stringify(updatedUser));
-
-        setSuccess('Avatar updated successfully!');
         setTimeout(() => setSuccess(''), 3000);
       }
 
@@ -239,9 +237,15 @@ const Profile = () => {
     }
   };
 
+  // Show login prompt if authentication is required
+  if (requiresAuth) {
+    navigate('/signin');
+    return null;
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
+      <div className="min-h-screen bg-[#A1BA82]"> {/* Changed background */}
         <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-100px)]">
           <div className="text-center">
@@ -254,7 +258,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 pt-20">
+    <div className="min-h-screen bg-[#A1BA82] pt-20"> {/* Changed background */}
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 py-8">

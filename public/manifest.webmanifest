@@ -1,23 +1,91 @@
 {
-  "name": "PulihHati",
+  "name": "PulihHati - Aplikasi Kesehatan Mental",
   "short_name": "PulihHati",
-  "description": "Aplikasi kesehatan mental untuk membantu Anda pulih",
+  "description": "Aplikasi kesehatan mental untuk membantu Anda pulih dan berkembang. Fitur Safe Space, Chatbot AI, dan Daily Tracker.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["health", "medical", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "/hero-login.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
   "icons": [
+    {
+      "src": "/pwa-64x64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
     {
       "src": "/logo2-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/logo2-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "apple touch icon"
+    },
+    {
+      "src": "/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Safe Space",
+      "short_name": "Safe Space",
+      "description": "Berbagi cerita dan pengalaman",
+      "url": "/safespace",
+      "icons": [
+        {
+          "src": "/logo2-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Chatbot",
+      "short_name": "Chatbot",
+      "description": "Konsultasi dengan AI",
+      "url": "/chatbot",
+      "icons": [
+        {
+          "src": "/logo2-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "short_name": "Profile",
+      "description": "Kelola profil Anda",
+      "url": "/profile",
+      "icons": [
+        {
+          "src": "/logo2-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
-} 
+}

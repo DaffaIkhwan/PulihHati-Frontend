@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import ChatbotPresenter from "../presenter/ChatbotPresenter";
+import StylishLoginPrompt from "../../components/StylishLoginPrompt";
 
 const ChatbotView = () => {
   const [state, setState] = useState({
@@ -9,14 +10,30 @@ const ChatbotView = () => {
     inputText: '',
     isTyping: false,
     loading: false,
-    error: null
+    error: null,
+    requiresAuth: false
   });
 
   const messagesEndRef = useRef(null);
   const presenterRef = useRef(null);
 
+  // Check authentication
+  const checkAuth = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setState(prev => ({ ...prev, requiresAuth: true }));
+      return false;
+    }
+    return true;
+  };
+
   // Initialize presenter
   useEffect(() => {
+    // Check authentication first
+    if (!checkAuth()) {
+      return;
+    }
+
     presenterRef.current = new ChatbotPresenter();
     presenterRef.current.setView({ setState });
     presenterRef.current.initialize();
@@ -35,7 +52,12 @@ const ChatbotView = () => {
     }
   }, [state.messages, state.isTyping]);
 
-  const { messages, inputText, isTyping, loading, error } = state;
+  const { messages, inputText, isTyping, loading, error, requiresAuth } = state;
+
+  // Show login prompt if authentication is required
+  if (requiresAuth) {
+    return <StylishLoginPrompt message="Silahkan login untuk menggunakan AI Chatbot" />;
+  }
 
   const handleInputChange = (e) => {
     if (presenterRef.current) {
@@ -68,12 +90,12 @@ const ChatbotView = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 pt-20">
+      <div className="min-h-screen bg-[#A1BA82] pt-20">
         <Navbar />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
-            <p className="text-stone-600">Loading chat...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#251404] mx-auto mb-4"></div>
+            <p className="text-[#251404] font-medium">Loading chat...</p>
           </div>
         </div>
       </div>
@@ -81,7 +103,7 @@ const ChatbotView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 pt-20">
+    <div className="min-h-screen bg-[#A1BA82] pt-20">
       <Navbar />
       <div className="flex flex-col h-[calc(100vh-80px)] w-full relative">
         {/* Error Message */}
@@ -114,7 +136,7 @@ const ChatbotView = () => {
                   }`}
                 >
                   {message.sender === "bot" && (
-                    <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mb-1 shadow-lg">
+                    <div className="w-8 h-8 bg-[#4F3422] rounded-full flex items-center justify-center flex-shrink-0 mb-1 shadow-lg">
                       <span className="text-white text-sm font-medium">T</span>
                     </div>
                   )}
@@ -122,7 +144,7 @@ const ChatbotView = () => {
                   <div
                     className={`rounded-2xl px-4 py-3 shadow-lg relative ${
                       message.sender === "user"
-                        ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-br-md"
+                        ? "bg-gradient-to-r from-[#251404] to-[#4F3422] text-white rounded-br-md"
                         : "bg-white text-stone-800 border border-stone-200 rounded-bl-md"
                     }`}
                   >
@@ -165,7 +187,7 @@ const ChatbotView = () => {
           {isTyping && (
             <div className="flex justify-start">
               <div className="flex items-end space-x-2 max-w-xs">
-                <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mb-1 shadow-lg">
+                <div className="w-8 h-8 bg-[#4F3422] rounded-full flex items-center justify-center flex-shrink-0 mb-1 shadow-lg">
                   <span className="text-white text-sm font-medium">T</span>
                 </div>
                 <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 shadow-lg border border-stone-200">
@@ -188,8 +210,8 @@ const ChatbotView = () => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white/80 backdrop-blur-sm px-4 py-4 border-t border-stone-200 shadow-lg">
-          <div className="flex items-center space-x-3 bg-stone-100 rounded-full px-4 py-3 shadow-inner">
+        <div className="bg-[#A1BA82] px-4 py-4 border-t border-[#4F3422] shadow-lg">
+          <div className="flex items-center space-x-3 bg-white/90 rounded-full px-4 py-3 shadow-inner">
             <input
               type="text"
               value={inputText}
@@ -202,7 +224,7 @@ const ChatbotView = () => {
             <button
               onClick={handleSendMessage}
               disabled={inputText.trim() === "" || isTyping}
-              className="p-2 rounded-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg transform hover:scale-105 active:scale-95"
+              className="p-2 rounded-full bg-gradient-to-r from-[#251404] to-[#4F3422] hover:from-[#4F3422] hover:to-[#251404] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg transform hover:scale-105 active:scale-95"
             >
               <Send className="w-4 h-4 text-white" />
             </button>

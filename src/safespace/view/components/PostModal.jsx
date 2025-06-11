@@ -1,4 +1,5 @@
 import { X, Heart, MessageCircle, Send } from 'lucide-react';
+import { formatPostDate, formatCommentDate, getPostDate } from '../../../utils/dateUtils';
 
 function PostModal({ post, user, newComment, onClose, onNewComment, onNewCommentChange }) {
   const getInitials = (name) => {
@@ -45,13 +46,7 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
                 </h3>
                 <span className="text-xs text-stone-500">•</span>
                 <p className="text-xs text-stone-500">
-                  {new Date(post.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {formatPostDate(getPostDate(post))}
                 </p>
               </div>
               <div className="mt-3 bg-white p-4 rounded-lg border border-stone-200">
@@ -95,12 +90,7 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
                     <div className="flex justify-between items-start">
                       <h4 className="font-medium text-black">{comment.author?.name}</h4>
                       <span className="text-xs text-gray-500">
-                        {new Date(comment.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {formatCommentDate(getPostDate(comment))}
                       </span>
                     </div>
                     <p className="text-sm text-black mt-1">{comment.content}</p>

@@ -1,11 +1,13 @@
 import { Heart, MessageCircle, Bookmark, Send, MoreHorizontal, Edit3, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { formatPostDate, formatCommentDate, getPostDate } from '../../../utils/dateUtils';
 
 function PostCard({
   post,
   user,
   bookmarkAnimations,
   inlineComments,
+  isReadOnly,
   onLike,
   onBookmark,
   onCommentClick,
@@ -42,7 +44,16 @@ function PostCard({
       .slice(0, 2);
   };
 
-  const isOwner = user && post.author && (user.id === post.author.id || user._id === post.author.id);
+  const isOwner = !isReadOnly && user && post.author && (user.id === post.author.id || user._id === post.author.id);
+
+  const handleActionClick = (action, ...args) => {
+    if (isReadOnly) {
+      // Redirect to login for read-only users
+      window.location.href = '/signin';
+      return;
+    }
+    action(...args);
+  };
 
   const handleEdit = () => {
     setShowDropdown(false);
@@ -76,13 +87,7 @@ function PostCard({
                   {post.is_anonymous ? 'Anonim' : post.author.name}
                 </h3>
                 <p className="text-sm text-stone-500">
-                  {new Date(post.createdAt).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {formatPostDate(getPostDate(post))}
                 </p>
               </div>
             </div>
@@ -122,45 +127,50 @@ function PostCard({
         </div>
         <div className="mt-5 flex space-x-3">
           <button
-            className={`flex items-center px-3 py-2 rounded-full transition-all duration-200 ${post.likes?.some(like => like.user === user.id) ? 'text-red-500 bg-red-50' : 'text-stone-500 hover:bg-stone-100'}`}
-            onClick={() => onLike(post._id)}
+            className={`flex items-center px-3 py-2 rounded-full transition-all duration-200 ${
+              isReadOnly
+                ? 'text-stone-400 cursor-not-allowed'
+                : post.likes?.some(like => like.user === user?.id)
+                  ? 'text-red-500 bg-red-50'
+                  : 'text-stone-500 hover:bg-stone-100'
+            }`}
+            onClick={() => handleActionClick(onLike, post._id)}
+            title={isReadOnly ? 'Login to like posts' : ''}
           >
-            <Heart className={`h-5 w-5 mr-1 ${post.likes?.some(like => like.user === user.id) ? 'fill-current' : ''}`} />
+            <Heart className={`h-5 w-5 mr-1 ${!isReadOnly && post.likes?.some(like => like.user === user?.id) ? 'fill-current' : ''}`} />
             <span className="font-medium">
-              {Array.isArray(post.likes)
-                ? post.likes.length > 0
-                  ? post.likes.length
-                  : 'Like'
-                : 'Like'}
+              {post.likes_count || (Array.isArray(post.likes) ? post.likes.length : 0) || 'Like'}
             </span>
           </button>
           <button
-            className="text-stone-500 flex items-center hover:bg-stone-100 px-3 py-2 rounded-full transition-all duration-200"
-            onClick={() => onCommentClick(post)}
+            className={`text-stone-500 flex items-center px-3 py-2 rounded-full transition-all duration-200 ${
+              isReadOnly ? 'cursor-not-allowed' : 'hover:bg-stone-100'
+            }`}
+            onClick={() => handleActionClick(onCommentClick, post)}
+            title={isReadOnly ? 'Login to comment' : ''}
           >
             <MessageCircle className="h-5 w-5 mr-1" />
             <span className="font-medium">
-              {Array.isArray(post.comments)
-                ? post.comments.length > 0
-                  ? post.comments.length
-                  : 'Comment'
-                : 'Comment'}
+              {post.comments_count || (Array.isArray(post.comments) ? post.comments.length : 0) || 'Comment'}
             </span>
           </button>
           <button
             className={`flex items-center px-3 py-2 rounded-full transition-all duration-200 ${
-              post.bookmarked
-                ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
-                : 'text-stone-500 hover:bg-stone-100'
+              isReadOnly
+                ? 'text-stone-400 cursor-not-allowed'
+                : post.bookmarked
+                  ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                  : 'text-stone-500 hover:bg-stone-100'
             }`}
-            onClick={() => onBookmark(post._id || post.id)}
+            onClick={() => handleActionClick(onBookmark, post._id || post.id)}
+            title={isReadOnly ? 'Login to save posts' : ''}
           >
             <Bookmark
               className={`h-5 w-5 mr-1 ${
-                post.bookmarked ? 'fill-current text-amber-700' : ''
-              } ${bookmarkAnimations[post._id || post.id] ? 'animate-bookmark' : ''}`}
+                !isReadOnly && post.bookmarked ? 'fill-current text-amber-700' : ''
+              } ${!isReadOnly && bookmarkAnimations[post._id || post.id] ? 'animate-bookmark' : ''}`}
             />
-            <span className="font-medium">{post.bookmarked ? 'Saved' : 'Save'}</span>
+            <span className="font-medium">{!isReadOnly && post.bookmarked ? 'Saved' : 'Save'}</span>
           </button>
         </div>
 
@@ -185,12 +195,7 @@ function PostCard({
                     <div className="flex justify-between items-start">
                       <h4 className="font-medium text-black text-sm">{comment.author?.name}</h4>
                       <span className="text-xs text-gray-500">
-                        {new Date(comment.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {formatCommentDate(getPostDate(comment))}
                       </span>
                     </div>
                     <p className="text-sm text-black mt-1">{comment.content}</p>
@@ -202,9 +207,11 @@ function PostCard({
               {post.comments.length > 1 && (
                 <button
                   className="text-blue-600 text-sm hover:text-blue-800 font-medium"
-                  onClick={() => onCommentClick(post)}
+                  onClick={() => isReadOnly ? null : onCommentClick(post)}
+                  title={isReadOnly ? 'Login to view all comments' : ''}
                 >
                   View all {post.comments.length} comments
+                  {isReadOnly && <span className="text-gray-400 ml-1">(Login required)</span>}
                 </button>
               )}
             </div>
@@ -212,39 +219,53 @@ function PostCard({
         )}
 
         {/* Inline Comment Input */}
-        <div className="mt-4 border-t pt-4">
-          <form onSubmit={(e) => onInlineComment(e, post._id || post.id)}>
-            <div className="flex items-center">
-              {user.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt="Your Profile"
-                  className="h-8 w-8 rounded-full mr-2"
-                />
-              ) : (
-                <div className="h-8 w-8 rounded-full mr-2 bg-amber-100 flex items-center justify-center text-amber-700 font-medium text-xs">
-                  {getInitials(user.name)}
+        {!isReadOnly ? (
+          <div className="mt-4 border-t pt-4">
+            <form onSubmit={(e) => onInlineComment(e, post._id || post.id)}>
+              <div className="flex items-center">
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="Your Profile"
+                    className="h-8 w-8 rounded-full mr-2"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full mr-2 bg-amber-100 flex items-center justify-center text-amber-700 font-medium text-xs">
+                    {getInitials(user?.name)}
+                  </div>
+                )}
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    className="bg-gray-50 rounded-full px-4 py-2 text-gray-700 w-full text-sm"
+                    placeholder="Write a comment..."
+                    value={inlineComments[post._id || post.id] || ''}
+                    onChange={(e) => onInlineCommentChange(post._id || post.id, e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
+                    disabled={!inlineComments[post._id || post.id]?.trim()}
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
                 </div>
-              )}
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  className="bg-gray-50 rounded-full px-4 py-2 text-gray-700 w-full text-sm"
-                  placeholder="Write a comment..."
-                  value={inlineComments[post._id || post.id] || ''}
-                  onChange={(e) => onInlineCommentChange(post._id || post.id, e.target.value)}
-                />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
-                  disabled={!inlineComments[post._id || post.id]?.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                </button>
               </div>
+            </form>
+          </div>
+        ) : (
+          <div className="mt-4 border-t pt-4">
+            <div className="flex items-center justify-center py-3 bg-gray-50 rounded-lg">
+              <span className="text-gray-500 text-sm mr-2">Ingin berkomentar?</span>
+              <button
+                onClick={() => window.location.href = '/signin'}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Login di sini
+              </button>
             </div>
-          </form>
-        </div>
+          </div>
+        )}
       </div>
     </article>
   );

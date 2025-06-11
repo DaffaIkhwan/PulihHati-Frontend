@@ -14,11 +14,9 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      window.location.href = '/signin';
-      return Promise.reject('No token found');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
-    config.headers['Authorization'] = `Bearer ${token}`;
     return config;
   },
   (error) => {
@@ -32,7 +30,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/signin';
+      localStorage.removeItem('user');
+      // Don't redirect immediately, let the component handle it
+      console.log('Authentication required for SafeSpace');
     }
     return Promise.reject(error);
   }
@@ -80,37 +80,285 @@ class SafeSpaceModel {
     }
   }
 
-  async getPosts() {
+  async getPosts(page = 1, limit = 10, append = false) {
     try {
-      // Check cache first
-      const cacheKey = 'posts';
-      const cachedData = this.getCache(cacheKey);
-      if (cachedData) {
-        console.log('Using cached posts data');
-        return cachedData;
+      // Create cache key with pagination
+      const cacheKey = `posts_page_${page}_limit_${limit}`;
+
+      // For first page, check if we have cached data
+      if (page === 1 && !append) {
+        const cachedData = this.getCache('posts_all');
+        if (cachedData && cachedData.length > 0) {
+          console.log('Using cached posts data');
+          return cachedData;
+        }
       }
 
-      console.log('Fetching posts from server...');
-      const response = await api.get('/safespace/posts');
-      console.log('Posts response:', response.data);
+      const token = localStorage.getItem('token');
+      let posts = [];
+      let responseData = null;
 
-      // Cache the response
-      this.setCache(cacheKey, response.data);
+      // If user is logged in, try authenticated endpoint first for full features
+      if (token) {
+        try {
+          console.log(`Fetching authenticated posts from server... (page: ${page}, limit: ${limit})`);
+          const authResponse = await api.get(`/safespace/posts?page=${page}&limit=${limit}`);
+          console.log('Authenticated posts response:', authResponse.data);
 
-      return response.data;
+          // Handle pagination response
+          responseData = authResponse.data;
+          if (responseData && responseData.posts && Array.isArray(responseData.posts)) {
+            posts = responseData.posts;
+            this.setCache('pagination_info', responseData.pagination);
+          } else if (Array.isArray(responseData)) {
+            posts = responseData;
+          }
+
+          if (append && page > 1) {
+            const existingPosts = this.getCache('posts_all') || [];
+            posts = [...existingPosts, ...posts];
+          }
+
+          this.setCache('posts_all', posts);
+          this.setCache(cacheKey, responseData);
+
+          return posts;
+        } catch (authError) {
+          console.error('Authenticated posts failed:', authError);
+          // If auth fails due to invalid token, remove it and fall back to public
+          if (authError.response?.status === 401) {
+            console.log('Token invalid, removing and falling back to public endpoint');
+            localStorage.removeItem('token');
+          }
+          // Continue to try public endpoint
+        }
+      }
+
+      // Try public endpoint (for non-authenticated users or as fallback)
+      console.log(`Fetching public posts from server... (page: ${page}, limit: ${limit})`);
+      console.log('API URL:', `${api.defaults.baseURL}/safespace/posts/public`);
+
+      try {
+        const publicResponse = await api.get(`/safespace/posts/public?page=${page}&limit=${limit}`);
+        console.log('Public posts response status:', publicResponse.status);
+        console.log('Public posts response data:', publicResponse.data);
+
+        // Handle pagination response
+        responseData = publicResponse.data;
+        if (responseData && responseData.posts && Array.isArray(responseData.posts)) {
+          posts = responseData.posts;
+          this.setCache('pagination_info', responseData.pagination);
+        } else if (Array.isArray(responseData)) {
+          posts = responseData;
+        }
+
+        if (append && page > 1) {
+          const existingPosts = this.getCache('posts_all') || [];
+          posts = [...existingPosts, ...posts];
+        }
+
+        this.setCache('posts_all', posts);
+        this.setCache(cacheKey, responseData);
+
+        return posts;
+      } catch (publicError) {
+        console.error('Public posts also failed:', publicError);
+        throw publicError;
+      }
+
     } catch (error) {
       console.error('Error fetching posts:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch posts. Please try again later.');
+
+      // Provide more specific error messages
+      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+        console.log('Backend not available, using mock data for demo...');
+
+        // Return mock data for demo purposes
+        const mockPosts = [
+          {
+            _id: 'demo-1',
+            id: 'demo-1',
+            content: 'Ini adalah contoh post dalam mode read-only. Backend sedang tidak tersedia, tapi Anda tetap bisa melihat bagaimana SafeSpace bekerja.',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            author: {
+              _id: 'demo-user',
+              id: 'demo-user',
+              name: 'Demo User',
+              avatar: null
+            },
+            likes: [],
+            comments: [],
+            likes_count: 5,
+            comments_count: 2,
+            bookmarked: false,
+            liked: false
+          },
+          {
+            _id: 'demo-2',
+            id: 'demo-2',
+            content: 'Mode read-only memungkinkan Anda melihat posts tanpa perlu login. Untuk berinteraksi (like, comment, post), silakan login terlebih dahulu.',
+            created_at: new Date(Date.now() - 3600000).toISOString(),
+            updated_at: new Date(Date.now() - 3600000).toISOString(),
+            author: {
+              _id: 'anonymous',
+              id: 'anonymous',
+              name: 'Anonymous',
+              avatar: null
+            },
+            likes: [],
+            comments: [],
+            likes_count: 12,
+            comments_count: 8,
+            bookmarked: false,
+            liked: false
+          }
+        ];
+
+        // Cache mock data
+        this.setCache(cacheKey, mockPosts);
+        this.setCache('isAuthenticated', false);
+
+        return mockPosts;
+      }
+
+      if (error.response?.status === 404) {
+        throw new Error('Posts endpoint not found. Please check if the backend is updated.');
+      }
+
+      throw new Error(error.response?.data?.message || error.message || 'Failed to fetch posts. Please try again later.');
+    }
+  }
+
+  // Check if there are more posts to load
+  async hasMorePosts(page = 1, limit = 10) {
+    try {
+      // First check cached pagination info
+      const paginationInfo = this.getCache('pagination_info');
+      if (paginationInfo) {
+        return paginationInfo.hasNext || page < paginationInfo.pages;
+      }
+
+      // Fallback: check by making a request
+      const token = localStorage.getItem('token');
+      let endpoint = '/safespace/posts/public';
+
+      // If user is authenticated, try authenticated endpoint first
+      if (token) {
+        try {
+          const response = await api.get(`/safespace/posts?page=${page + 1}&limit=1`);
+          if (response.data && response.data.posts) {
+            return response.data.posts.length > 0;
+          } else if (Array.isArray(response.data)) {
+            return response.data.length > 0;
+          }
+          return false;
+        } catch (authError) {
+          // If auth fails, fall back to public endpoint
+          if (authError.response?.status === 401) {
+            localStorage.removeItem('token');
+          }
+        }
+      }
+
+      // Try public endpoint
+      const response = await api.get(`${endpoint}?page=${page + 1}&limit=1`);
+      if (response.data && response.data.posts) {
+        return response.data.posts.length > 0;
+      } else if (Array.isArray(response.data)) {
+        return response.data.length > 0;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking for more posts:', error);
+      return false;
+    }
+  }
+
+  // Clear posts cache when needed
+  clearPostsCache() {
+    this.clearCache('posts_all');
+    // Clear all page-specific caches
+    for (const key of this.cache.keys()) {
+      if (key.startsWith('posts_page_')) {
+        this.cache.delete(key);
+        this.cacheTimestamps.delete(key);
+      }
+    }
+  }
+
+  // Check if user is authenticated
+  isAuthenticated() {
+    const token = localStorage.getItem('token');
+
+    // If no token, definitely not authenticated
+    if (!token) {
+      return false;
+    }
+
+    // If we have a token, consider authenticated
+    // The actual validation will happen when making API calls
+    return true;
+  }
+
+  // Validate token with backend
+  async validateToken() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return false;
+    }
+
+    try {
+      // Try to get user data to validate token
+      const response = await api.get('/auth/me');
+      return response.status === 200;
+    } catch (error) {
+      // If token is invalid, remove it
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        return false;
+      }
+      // For other errors (network, server), assume token is still valid
+      return true;
     }
   }
 
   async getPostById(postId) {
     try {
       console.log('Fetching complete post by ID:', postId);
-      const response = await api.get(`/safespace/posts/${postId}`);
-      console.log('Complete post response:', response.data);
+      const token = localStorage.getItem('token');
 
-      const postData = response.data;
+      // If user is authenticated, try authenticated endpoint first for full features
+      if (token) {
+        try {
+          console.log('Fetching authenticated post by ID:', postId);
+          const authResponse = await api.get(`/safespace/posts/${postId}`);
+          console.log('Authenticated post response:', authResponse.data);
+
+          const postData = authResponse.data;
+          if (postData && !postData.comments) {
+            postData.comments = [];
+          }
+
+          return postData;
+        } catch (authError) {
+          console.error('Authenticated post endpoint failed:', authError);
+          // If auth fails due to invalid token, remove it and fall back to public
+          if (authError.response?.status === 401) {
+            console.log('Token invalid, removing and falling back to public endpoint');
+            localStorage.removeItem('token');
+          }
+          // Continue to try public endpoint
+        }
+      }
+
+      // Try public endpoint (for non-authenticated users or as fallback)
+      console.log('Fetching public post by ID:', postId);
+      const publicResponse = await api.get(`/safespace/posts/${postId}/public`);
+      console.log('Public post response:', publicResponse.data);
+
+      const postData = publicResponse.data;
       if (postData && !postData.comments) {
         postData.comments = [];
       }
@@ -118,6 +366,15 @@ class SafeSpaceModel {
       return postData;
     } catch (error) {
       console.error('Error fetching post by ID:', error);
+
+      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+        throw new Error('Cannot connect to server. Please check if the backend is running.');
+      }
+
+      if (error.response?.status === 404) {
+        throw new Error('Post not found or endpoint not available.');
+      }
+
       throw new Error(error.response?.data?.message || 'Failed to fetch post. Please try again later.');
     }
   }

@@ -1,4 +1,5 @@
 import { Bell, Heart, MessageCircle, Bookmark } from 'lucide-react';
+import { formatPostDate, getPostDate } from '../../../utils/dateUtils';
 
 function NotificationsTab({
   notifications,
@@ -120,13 +121,7 @@ function NotificationsTab({
                           {formatNotificationMessage(notification)}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {new Date(notification.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {formatPostDate(getPostDate(notification))}
                         </p>
                       </div>
                     </div>

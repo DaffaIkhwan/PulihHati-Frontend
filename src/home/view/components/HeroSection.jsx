@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 const quotes = [
   "Kesehatan mental sama pentingnya dengan kesehatan fisik",
@@ -7,7 +8,7 @@ const quotes = [
   "Kamu tidak sendirian dalam perjalanan ini"
 ];
 
-function HeroSection({ currentQuote, onPrevQuote, onNextQuote, onQuoteChange }) {
+function HeroSection({ currentQuote, onNextQuote, onQuoteChange }) {
   // Auto-rotate quotes every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -61,4 +62,10 @@ function HeroSection({ currentQuote, onPrevQuote, onNextQuote, onQuoteChange }) 
   );
 }
 
-export default HeroSection; 
+HeroSection.propTypes = {
+  currentQuote: PropTypes.number.isRequired,
+  onNextQuote: PropTypes.func.isRequired,
+  onQuoteChange: PropTypes.func.isRequired
+};
+
+export default HeroSection;

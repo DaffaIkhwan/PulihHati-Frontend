@@ -33,7 +33,7 @@ function NewPostForm({ user, newPost, onNewPost, onNewPostChange, is_anonymous, 
               <p className="text-sm text-stone-500">Share your thoughts with the community</p>
             </div>
             <textarea
-              className="w-full border border-stone-300 rounded-xl p-4 text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-stone-50"
+              className="w-full border border-stone-300 rounded-xl p-4 text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#4F3422] focus:border-[#4F3422] bg-stone-50"
               placeholder="What's on your mind?"
               rows="3"
               value={newPost}
@@ -45,13 +45,13 @@ function NewPostForm({ user, newPost, onNewPost, onNewPostChange, is_anonymous, 
                   type="checkbox"
                   checked={is_anonymous}
                   onChange={e => onAnonymousChange(e.target.checked)}
-                  className="accent-amber-700"
+                  className="accent-[#251404]"
                 />
                 Posting sebagai Anonim
               </label>
               <button
                 type="submit"
-                className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-2 rounded-full font-medium flex items-center hover:from-amber-700 hover:to-amber-800 transition-all duration-200 shadow-lg"
+                className="bg-gradient-to-r from-[#251404] to-[#4F3422] text-white px-6 py-2 rounded-full font-medium flex items-center hover:from-[#4F3422] hover:to-[#251404] transition-all duration-200 shadow-lg"
                 disabled={!newPost.trim()}
               >
                 <Plus className="h-5 w-5 mr-1" />

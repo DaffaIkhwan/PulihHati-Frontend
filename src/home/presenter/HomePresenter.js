@@ -77,11 +77,26 @@ class HomePresenter {
 
   async fetchMoodHistory() {
     console.log('Presenter: Fetching mood history');
+
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token || token === 'null' || token === 'undefined') {
+      console.log('Presenter: User not authenticated, returning empty mood history');
+      return this.generateEmptyMoodHistory();
+    }
+
     try {
       const data = await this.model.getMoodHistory();
       return data && data.length > 0 ? data : this.generateEmptyMoodHistory();
     } catch (error) {
       console.error('Presenter: Error fetching mood history:', error);
+
+      // If authentication error, clear token and return empty history
+      if (error.message && error.message.includes('401')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+
       return this.generateEmptyMoodHistory();
     }
   }
@@ -99,6 +114,15 @@ class HomePresenter {
 
   async handleMoodSelect(moodId) {
     console.log('Presenter: Handling mood selection:', moodId);
+
+    // Check authentication first
+    const token = localStorage.getItem('token');
+    if (!token || token === 'null' || token === 'undefined') {
+      console.log('Presenter: User not authenticated, redirecting to login');
+      window.location.href = '/signin';
+      return;
+    }
+
     this.updateState({ loading: true, error: null, success: null });
 
     try {
@@ -147,6 +171,15 @@ class HomePresenter {
 
     } catch (error) {
       console.error('Presenter: Error saving mood:', error);
+
+      // Handle authentication errors
+      if (error.message && (error.message.includes('401') || error.message.includes('Authentication'))) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/signin';
+        return;
+      }
+
       this.updateState({
         error: error.message || 'Gagal menyimpan mood'
       });
@@ -157,11 +190,11 @@ class HomePresenter {
 
   getMoodEmoji(moodId) {
     const moodTypes = [
-      { id: 1, emoji: '😢' },
-      { id: 2, emoji: '😟' },
+      { id: 1, emoji: '😊' },
+      { id: 2, emoji: '🙂' },
       { id: 3, emoji: '😐' },
-      { id: 4, emoji: '😊' },
-      { id: 5, emoji: '😄' }
+      { id: 4, emoji: '😔' },
+      { id: 5, emoji: '😢' }
     ];
     const mood = moodTypes.find(m => m.id === moodId);
     return mood ? mood.emoji : '😐';
@@ -169,11 +202,11 @@ class HomePresenter {
 
   getMoodLabel(moodId) {
     const moodTypes = [
-      { id: 1, label: 'Sedih' },
-      { id: 2, label: 'Cemas' },
-      { id: 3, label: 'Netral' },
-      { id: 4, label: 'Senang' },
-      { id: 5, label: 'Sangat Bahagia' }
+      { id: 1, label: 'Sangat Baik' },
+      { id: 2, label: 'Baik' },
+      { id: 3, label: 'Biasa' },
+      { id: 4, label: 'Buruk' },
+      { id: 5, label: 'Sangat Buruk' }
     ];
     const mood = moodTypes.find(m => m.id === moodId);
     return mood ? mood.label : 'Unknown';
@@ -181,11 +214,11 @@ class HomePresenter {
 
   getMoodColor(moodId) {
     const moodTypes = [
-      { id: 1, color: '#3B82F6' },
-      { id: 2, color: '#F59E0B' },
-      { id: 3, color: '#6B7280' },
-      { id: 4, color: '#10B981' },
-      { id: 5, color: '#EC4899' }
+      { id: 1, color: '#22C55E' },  // Green - Sangat Baik
+      { id: 2, color: '#10B981' },  // Emerald - Baik
+      { id: 3, color: '#EAB308' },  // Yellow - Biasa
+      { id: 4, color: '#F97316' },  // Orange - Buruk
+      { id: 5, color: '#EF4444' }   // Red - Sangat Buruk
     ];
     const mood = moodTypes.find(m => m.id === moodId);
     return mood ? mood.color : '#6B7280';

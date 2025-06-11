@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Heart, MessageCircle } from "lucide-react";
+import { formatCardDate, getPostDate } from '../../utils/dateUtils';
 
 function PopularPosts({ posts = [], currentSlide = 0, onPrevSlide, onNextSlide, onSlideChange }) {
   const getInitials = (name) => {
@@ -41,11 +42,7 @@ function PopularPosts({ posts = [], currentSlide = 0, onPrevSlide, onNextSlide, 
           <div className="flex-1">
             <h4 className="font-semibold text-stone-800 text-sm">{currentPost.author?.name || 'Anonymous'}</h4>
             <p className="text-xs text-stone-500">
-              {new Date(currentPost.created_at).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-              })}
+              {formatCardDate(getPostDate(currentPost))}
             </p>
           </div>
         </div>
