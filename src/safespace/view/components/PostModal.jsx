@@ -1,7 +1,7 @@
 import { X, Heart, MessageCircle, Send } from 'lucide-react';
 import { formatPostDate, formatCommentDate, getPostDate } from '../../../utils/dateUtils';
 
-function PostModal({ post, user, newComment, onClose, onNewComment, onNewCommentChange }) {
+function PostModal({ post, user, newComment, submittingComment, onClose, onNewComment, onNewCommentChange }) {
   const getInitials = (name) => {
     if (!name) return 'A';
     return name
@@ -135,10 +135,18 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
                 />
                 <button
                   type="submit"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
-                  disabled={!newComment.trim()}
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors ${
+                    submittingComment || !newComment.trim()
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-500 hover:text-blue-600'
+                  }`}
+                  disabled={submittingComment || !newComment.trim()}
                 >
-                  <Send className="h-5 w-5" />
+                  {submittingComment ? (
+                    <div className="h-5 w-5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>

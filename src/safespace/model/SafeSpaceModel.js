@@ -252,6 +252,16 @@ class SafeSpaceModel {
         return hasMore;
       }
 
+      // Check current posts count to make a better decision
+      const currentPosts = this.getCache('posts_all') || [];
+      const expectedPostsForPage = page * limit;
+
+      // If we have fewer posts than expected for this page, likely no more posts
+      if (currentPosts.length < expectedPostsForPage && page > 1) {
+        console.log(`Current posts (${currentPosts.length}) < expected (${expectedPostsForPage}), likely no more posts`);
+        return false;
+      }
+
       // Fallback: check by making a request for next page
       const nextPage = page + 1;
       const token = localStorage.getItem('token');
@@ -298,8 +308,22 @@ class SafeSpaceModel {
       return false;
     } catch (error) {
       console.error('Error checking for more posts:', error);
-      // If there's an error, assume no more posts to prevent infinite loading
-      return false;
+
+      // For network errors, be more conservative - assume there might be more posts
+      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+        console.log('Network error - assuming more posts might be available');
+        return true; // Allow retry
+      }
+
+      // For 404 or other server errors, assume no more posts
+      if (error.response?.status === 404 || error.response?.status >= 500) {
+        console.log('Server error - assuming no more posts');
+        return false;
+      }
+
+      // For other errors, be conservative and assume more posts might be available
+      console.log('Unknown error - assuming more posts might be available for retry');
+      return true;
     }
   }
 

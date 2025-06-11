@@ -8,6 +8,7 @@ function PostCard({
   bookmarkAnimations,
   inlineComments,
   isReadOnly,
+  commentSubmitting,
   onLike,
   onBookmark,
   onCommentClick,
@@ -244,10 +245,18 @@ function PostCard({
                   />
                   <button
                     type="submit"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
-                    disabled={!inlineComments[post._id || post.id]?.trim()}
+                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors ${
+                      commentSubmitting?.[post._id || post.id] || !inlineComments[post._id || post.id]?.trim()
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-500 hover:text-blue-600'
+                    }`}
+                    disabled={commentSubmitting?.[post._id || post.id] || !inlineComments[post._id || post.id]?.trim()}
                   >
-                    <Send className="h-4 w-4" />
+                    {commentSubmitting?.[post._id || post.id] ? (
+                      <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>

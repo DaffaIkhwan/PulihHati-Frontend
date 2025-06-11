@@ -18,9 +18,15 @@ class SafeSpacePresenter {
       // Infinite scroll state
       currentPage: 1,
       hasMorePosts: true,
-      loadingMore: false
+      loadingMore: false,
+      // Comment submission tracking
+      commentSubmitting: {}, // Track comment submission state per post
+      submittingComment: false // Track modal comment submission
     };
     this.setState = null;
+
+    // Track ongoing requests to prevent duplicates
+    this.ongoingRequests = new Set();
   }
 
   setStateUpdater(setState) {
@@ -348,7 +354,8 @@ class SafeSpacePresenter {
       return;
     }
 
-    this.updateState({ loadingMore: true });
+    // Clear any previous errors
+    this.updateState({ loadingMore: true, error: null });
 
     try {
       const nextPage = this.state.currentPage + 1;
@@ -357,6 +364,11 @@ class SafeSpacePresenter {
       // Fetch new posts and append to existing ones
       const allPosts = await this.fetchDataOptimized(nextPage, true);
 
+      // Validate that we got posts
+      if (!Array.isArray(allPosts)) {
+        throw new Error('Invalid response format from server');
+      }
+
       // Check if we have more posts after this page
       const hasMore = await this.model.hasMorePosts(nextPage);
 
@@ -364,16 +376,34 @@ class SafeSpacePresenter {
         posts: allPosts,
         currentPage: nextPage,
         hasMorePosts: hasMore,
-        loadingMore: false
+        loadingMore: false,
+        error: null
       });
 
       console.log(`Loaded page ${nextPage}, hasMore: ${hasMore}, total posts: ${allPosts.length}`);
     } catch (error) {
       console.error('Error loading more posts:', error);
+
+      // Provide specific error messages based on error type
+      let errorMessage = 'Failed to load more posts. Please try again.';
+
+      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network connection failed. Please check your internet connection.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error occurred. Please try again in a moment.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Posts endpoint not found. Please refresh the page.';
+      } else if (error.message.includes('Invalid response format')) {
+        errorMessage = 'Received invalid data from server. Please refresh the page.';
+      }
+
       this.updateState({
         loadingMore: false,
-        error: 'Failed to load more posts. Please try again.'
+        error: errorMessage
       });
+
+      // Re-throw error so InfiniteScroll component can handle retry logic
+      throw new Error(errorMessage);
     }
   }
 
@@ -429,12 +459,37 @@ class SafeSpacePresenter {
       return;
     }
 
+    // Store original post state for rollback on error
+    const originalPost = this.state.posts.find(post => post._id === postId || post.id === postId);
+    if (!originalPost) {
+      console.error('Post not found for like action');
+      return;
+    }
+
+    // Optimistic update - immediately update UI
+    const optimisticUpdate = {
+      ...originalPost,
+      liked: !originalPost.liked,
+      likes_count: originalPost.liked
+        ? (originalPost.likes_count || 0) - 1
+        : (originalPost.likes_count || 0) + 1
+    };
+
+    this.updateState({
+      posts: this.state.posts.map(post =>
+        (post._id === postId || post.id === postId) ? optimisticUpdate : post
+      ),
+      selectedPost: this.state.selectedPost && (this.state.selectedPost._id === postId || this.state.selectedPost.id === postId)
+        ? optimisticUpdate
+        : this.state.selectedPost
+    });
+
     try {
       console.log('Liking post:', postId);
       const response = await this.model.likePost(postId);
       console.log('Like response:', response);
 
-      // Update the post with new likes data
+      // Update with actual server response
       this.updateState({
         posts: this.state.posts.map(post => {
           if (post._id === postId || post.id === postId) {
@@ -442,29 +497,56 @@ class SafeSpacePresenter {
               ...post,
               likes: response.likes || response,
               likes_count: response.likes_count || (response.likes ? response.likes.length : 0),
-              liked: response.liked !== undefined ? response.liked : !post.liked
+              liked: response.liked !== undefined ? response.liked : !originalPost.liked
             };
           }
           return post;
         }),
-        // Also update selectedPost if it's the same post
         selectedPost: this.state.selectedPost && (this.state.selectedPost._id === postId || this.state.selectedPost.id === postId)
           ? {
               ...this.state.selectedPost,
               likes: response.likes || response,
               likes_count: response.likes_count || (response.likes ? response.likes.length : 0),
-              liked: response.liked !== undefined ? response.liked : !this.state.selectedPost.liked
+              liked: response.liked !== undefined ? response.liked : !originalPost.liked
             }
-          : this.state.selectedPost
+          : this.state.selectedPost,
+        error: null // Clear any previous errors
       });
     } catch (err) {
       console.error('Error liking post:', err);
-      // If error is due to authentication, redirect to login
+
+      // Rollback optimistic update
+      this.updateState({
+        posts: this.state.posts.map(post =>
+          (post._id === postId || post.id === postId) ? originalPost : post
+        ),
+        selectedPost: this.state.selectedPost && (this.state.selectedPost._id === postId || this.state.selectedPost.id === postId)
+          ? originalPost
+          : this.state.selectedPost
+      });
+
+      // Handle specific error types
       if (err.message.includes('401') || err.message.includes('unauthorized') || err.message.includes('Not authorized')) {
         window.location.href = '/signin';
         return;
       }
-      this.updateState({ error: 'Failed to like post. Please try again.' });
+
+      // Provide specific error messages
+      let errorMessage = 'Failed to like post. Please try again.';
+      if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
+        errorMessage = 'Network connection failed. Please check your internet connection.';
+      } else if (err.response?.status === 500) {
+        errorMessage = 'Server error occurred. Please try again in a moment.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Post not found. Please refresh the page.';
+      }
+
+      this.updateState({ error: errorMessage });
+
+      // Auto-clear error after 5 seconds
+      setTimeout(() => {
+        this.updateState({ error: null });
+      }, 5000);
     }
   }
 
@@ -556,9 +638,27 @@ class SafeSpacePresenter {
       return;
     }
 
+    // Prevent duplicate submissions
+    if (this.state.submittingComment) {
+      console.log('Comment submission already in progress');
+      return;
+    }
+
+    const postId = this.state.selectedPost._id || this.state.selectedPost.id;
+    const commentContent = this.state.newComment.trim();
+    const requestKey = `modal_comment_${postId}_${commentContent}`;
+
+    // Check if this exact request is already in progress
+    if (this.ongoingRequests.has(requestKey)) {
+      console.log('Duplicate comment request detected, ignoring');
+      return;
+    }
+
+    this.updateState({ submittingComment: true });
+    this.ongoingRequests.add(requestKey);
+
     try {
-      const postId = this.state.selectedPost._id || this.state.selectedPost.id;
-      const updatedComments = await this.model.addComment(postId, this.state.newComment);
+      const updatedComments = await this.model.addComment(postId, commentContent);
 
       this.updateState({
         selectedPost: {
@@ -570,7 +670,8 @@ class SafeSpacePresenter {
             ? { ...post, comments: updatedComments }
             : post
         ),
-        newComment: ''
+        newComment: '',
+        submittingComment: false
       });
     } catch (err) {
       console.error('Error adding comment:', err);
@@ -579,7 +680,15 @@ class SafeSpacePresenter {
         window.location.href = '/signin';
         return;
       }
-      this.updateState({ error: 'Failed to add comment. Please try again.' });
+      this.updateState({
+        error: 'Failed to add comment. Please try again.',
+        submittingComment: false
+      });
+    } finally {
+      // Remove request from ongoing set after a delay to prevent rapid resubmission
+      setTimeout(() => {
+        this.ongoingRequests.delete(requestKey);
+      }, 1000);
     }
   }
 
@@ -596,8 +705,32 @@ class SafeSpacePresenter {
       return;
     }
 
+    // Prevent duplicate submissions for this specific post
+    if (this.state.commentSubmitting[postId]) {
+      console.log(`Comment submission already in progress for post ${postId}`);
+      return;
+    }
+
+    const commentContent = commentText.trim();
+    const requestKey = `inline_comment_${postId}_${commentContent}`;
+
+    // Check if this exact request is already in progress
+    if (this.ongoingRequests.has(requestKey)) {
+      console.log('Duplicate inline comment request detected, ignoring');
+      return;
+    }
+
+    // Set submitting state for this specific post
+    this.updateState({
+      commentSubmitting: {
+        ...this.state.commentSubmitting,
+        [postId]: true
+      }
+    });
+    this.ongoingRequests.add(requestKey);
+
     try {
-      const updatedComments = await this.model.addComment(postId, commentText);
+      const updatedComments = await this.model.addComment(postId, commentContent);
 
       this.updateState({
         posts: this.state.posts.map(post =>
@@ -611,6 +744,10 @@ class SafeSpacePresenter {
         inlineComments: {
           ...this.state.inlineComments,
           [postId]: ''
+        },
+        commentSubmitting: {
+          ...this.state.commentSubmitting,
+          [postId]: false
         }
       });
     } catch (err) {
@@ -620,7 +757,18 @@ class SafeSpacePresenter {
         window.location.href = '/signin';
         return;
       }
-      this.updateState({ error: 'Failed to add comment. Please try again.' });
+      this.updateState({
+        error: 'Failed to add comment. Please try again.',
+        commentSubmitting: {
+          ...this.state.commentSubmitting,
+          [postId]: false
+        }
+      });
+    } finally {
+      // Remove request from ongoing set after a delay to prevent rapid resubmission
+      setTimeout(() => {
+        this.ongoingRequests.delete(requestKey);
+      }, 1000);
     }
   }
 

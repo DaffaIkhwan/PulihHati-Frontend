@@ -13,6 +13,7 @@ function HomeTab({
   user,
   bookmarkAnimations,
   inlineComments,
+  commentSubmitting,
   isReadOnly,
   hasMorePosts,
   loadingMore,
@@ -83,7 +84,7 @@ function HomeTab({
           hasMore={hasMorePosts}
           loading={loadingMore}
           onLoadMore={onLoadMore}
-          threshold={200}
+          threshold={window.innerWidth <= 768 ? 400 : 200} // Larger threshold for mobile
         >
           <div className="space-y-6">
             {posts.map(post => (
@@ -93,6 +94,7 @@ function HomeTab({
                 user={user}
                 bookmarkAnimations={bookmarkAnimations}
                 inlineComments={inlineComments}
+                commentSubmitting={commentSubmitting}
                 isReadOnly={isReadOnly}
                 onLike={onLike}
                 onBookmark={onBookmark}
@@ -150,6 +152,7 @@ HomeTab.propTypes = {
   user: PropTypes.object,
   bookmarkAnimations: PropTypes.object.isRequired,
   inlineComments: PropTypes.object.isRequired,
+  commentSubmitting: PropTypes.object,
   isReadOnly: PropTypes.bool.isRequired,
   hasMorePosts: PropTypes.bool.isRequired,
   loadingMore: PropTypes.bool.isRequired,
