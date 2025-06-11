@@ -61,7 +61,7 @@ function HomeTab({
             <p className="text-gray-500 mb-4">Login untuk membuat post dan berinteraksi dengan komunitas</p>
             <button
               onClick={() => window.location.href = '/signin'}
-              className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              className="bg-[#251404] hover:bg-[#4F3422] text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               Login untuk Posting
             </button>
@@ -128,7 +128,7 @@ function HomeTab({
                 {isReadOnly && (
                   <button
                     onClick={() => window.location.href = '/signin'}
-                    className="mt-4 bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition-colors"
+                    className="mt-4 bg-[#251404] text-white px-6 py-2 rounded-lg hover:bg-[#4F3422] transition-colors"
                   >
                     Login to Post
                   </button>

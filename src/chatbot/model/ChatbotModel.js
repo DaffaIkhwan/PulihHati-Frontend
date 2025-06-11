@@ -21,7 +21,7 @@ class ChatbotModel {
   async getChatHistory() {
     try {
       const cacheKey = 'chat_history';
-      
+
       // Check cache first
       if (this.cache.has(cacheKey)) {
         const cached = this.cache.get(cacheKey);
@@ -42,7 +42,7 @@ class ChatbotModel {
       return history;
     } catch (error) {
       console.error('Error getting chat history:', error);
-      // Return empty array if history is not available
+      // Return empty array if history is not available (e.g., no authentication or endpoint not implemented)
       return [];
     }
   }
@@ -51,13 +51,14 @@ class ChatbotModel {
   async saveChatHistory(messages) {
     try {
       await api.post('/chatbot/history', { messages });
-      
+
       // Clear cache after saving
       this.clearCache('chat_history');
-      
+
       return true;
     } catch (error) {
       console.error('Error saving chat history:', error);
+      // Silently fail if history saving is not available (e.g., no authentication or endpoint not implemented)
       return false;
     }
   }
@@ -99,7 +100,7 @@ class ChatbotModel {
   // Get initial bot message
   getInitialMessage() {
     return this.createMessage(
-      "Hi, Jerry 😊 How's your day?",
+      "Hi,😊 ada yang bisa saya bantu?",
       'bot',
       true
     );

@@ -27,40 +27,61 @@ api.interceptors.request.use(
 // Fallback data for popular posts
 const fallbackPosts = [
   {
-    id: 1,
-    content: 'Kamu tidak sendiri. Pulih bisa dimulai dari sini.',
-    user: {
-      name: 'Admin',
+    _id: 'fallback-1',
+    id: 'fallback-1',
+    content: '🌱 Kamu tidak sendiri dalam perjalanan ini. Setiap langkah kecil menuju kesehatan mental adalah kemajuan yang berarti. Mari kita saling mendukung dan tumbuh bersama di komunitas yang aman ini.',
+    author: {
+      _id: 'admin-1',
+      id: 'admin-1',
+      name: 'PulihHati Team',
       avatar: null
     },
-    likes: [],
-    comments: [],
-    bookmarks: [],
-    createdAt: new Date().toISOString()
+    likes: Array(15).fill().map((_, i) => ({ _id: `like-${i}` })),
+    comments: Array(8).fill().map((_, i) => ({ _id: `comment-${i}` })),
+    likes_count: 15,
+    comments_count: 8,
+    bookmarked: false,
+    liked: false,
+    created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    updated_at: new Date(Date.now() - 86400000).toISOString()
   },
   {
-    id: 2,
-    content: 'Hari ini aku belajar untuk lebih sabar dan menerima diri.',
-    user: {
-      name: 'Admin',
+    _id: 'fallback-2',
+    id: 'fallback-2',
+    content: '💪 Hari ini aku belajar untuk lebih sabar dan menerima diri apa adanya. Proses healing memang tidak mudah, tapi setiap hari adalah kesempatan baru untuk menjadi versi terbaik dari diri kita.',
+    author: {
+      _id: 'admin-2',
+      id: 'admin-2',
+      name: 'Wellness Guide',
       avatar: null
     },
-    likes: [],
-    comments: [],
-    bookmarks: [],
-    createdAt: new Date().toISOString()
+    likes: Array(12).fill().map((_, i) => ({ _id: `like-${i}` })),
+    comments: Array(6).fill().map((_, i) => ({ _id: `comment-${i}` })),
+    likes_count: 12,
+    comments_count: 6,
+    bookmarked: false,
+    liked: false,
+    created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+    updated_at: new Date(Date.now() - 172800000).toISOString()
   },
   {
-    id: 3,
-    content: 'Mencoba untuk bersyukur setiap hari membawa ketenangan pikiran.',
-    user: {
-      name: 'Admin',
+    _id: 'fallback-3',
+    id: 'fallback-3',
+    content: '🙏 Mencoba untuk bersyukur setiap hari membawa ketenangan pikiran yang luar biasa. Kadang hal-hal kecil seperti secangkir teh hangat atau senyuman orang asing bisa mengubah seluruh hari kita.',
+    author: {
+      _id: 'admin-3',
+      id: 'admin-3',
+      name: 'Mindful Soul',
       avatar: null
     },
-    likes: [],
-    comments: [],
-    bookmarks: [],
-    createdAt: new Date().toISOString()
+    likes: Array(18).fill().map((_, i) => ({ _id: `like-${i}` })),
+    comments: Array(10).fill().map((_, i) => ({ _id: `comment-${i}` })),
+    likes_count: 18,
+    comments_count: 10,
+    bookmarked: false,
+    liked: false,
+    created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+    updated_at: new Date(Date.now() - 259200000).toISOString()
   }
 ];
 
@@ -101,14 +122,42 @@ class HomeModel {
   async getPopularPosts() {
     console.log('Model: Fetching popular posts');
     try {
-      const response = await api.get('/safespace/posts');
-      console.log('Model: Popular posts response:', response.data);
+      const token = localStorage.getItem('token');
+      let response;
+
+      // Try authenticated endpoint first if user is logged in
+      if (token) {
+        try {
+          console.log('Model: Trying authenticated endpoint for popular posts');
+          response = await api.get('/safespace/posts?limit=10');
+          console.log('Model: Authenticated popular posts response:', response.data);
+        } catch (authError) {
+          console.log('Model: Authenticated endpoint failed, falling back to public:', authError.message);
+          // If auth fails, remove invalid token and fall back to public
+          if (authError.response?.status === 401) {
+            localStorage.removeItem('token');
+          }
+          response = null;
+        }
+      }
+
+      // If no authenticated response, try public endpoint
+      if (!response) {
+        console.log('Model: Fetching popular posts from public endpoint');
+        response = await api.get('/safespace/posts/public?limit=10');
+        console.log('Model: Public popular posts response:', response.data);
+      }
+
       const posts = response.data.posts || response.data || [];
       const popularPosts = posts
-        .filter(post => post.likes && Array.isArray(post.likes))
-        .sort((a, b) => b.likes.length - a.likes.length)
+        .filter(post => post.likes_count !== undefined || (post.likes && Array.isArray(post.likes)))
+        .sort((a, b) => {
+          const aLikes = a.likes_count || (a.likes ? a.likes.length : 0);
+          const bLikes = b.likes_count || (b.likes ? b.likes.length : 0);
+          return bLikes - aLikes;
+        })
         .slice(0, 3);
-      
+
       return popularPosts.length > 0 ? popularPosts : fallbackPosts;
     } catch (error) {
       console.error('Model: Error fetching popular posts:', error);
@@ -116,7 +165,10 @@ class HomeModel {
         console.log('Model: Using fallback posts due to network error');
         return fallbackPosts;
       }
-      throw new Error(error.response?.data?.message || 'Gagal memuat post populer');
+
+      // If public endpoint also fails, return fallback posts instead of throwing error
+      console.log('Model: All endpoints failed, using fallback posts');
+      return fallbackPosts;
     }
   }
 }

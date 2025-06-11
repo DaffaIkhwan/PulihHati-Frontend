@@ -11,14 +11,14 @@ const moodTypes = [
 
 function ChartLegend() {
   return (
-    <div className="flex flex-wrap gap-2 mt-4 justify-center">
+    <div className="flex flex-wrap gap-2 sm:gap-3 mt-3 sm:mt-4 justify-center px-2">
       {moodTypes.map((mood) => (
-        <div key={mood.id} className="flex items-center gap-1">
+        <div key={mood.id} className="flex items-center gap-1 sm:gap-1.5">
           <div
-            className="w-3 h-3 rounded-full"
+            className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: mood.chartColor }}
           ></div>
-          <span className="text-xs text-stone-600">{mood.emoji} {mood.label}</span>
+          <span className="text-xs sm:text-xs text-stone-600 font-medium">{mood.emoji} {mood.label}</span>
         </div>
       ))}
     </div>

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import ChatbotPresenter from "../presenter/ChatbotPresenter";
-import StylishLoginPrompt from "../../components/StylishLoginPrompt";
 
 const ChatbotView = () => {
   const [state, setState] = useState({
@@ -10,30 +9,14 @@ const ChatbotView = () => {
     inputText: '',
     isTyping: false,
     loading: false,
-    error: null,
-    requiresAuth: false
+    error: null
   });
 
   const messagesEndRef = useRef(null);
   const presenterRef = useRef(null);
 
-  // Check authentication
-  const checkAuth = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setState(prev => ({ ...prev, requiresAuth: true }));
-      return false;
-    }
-    return true;
-  };
-
   // Initialize presenter
   useEffect(() => {
-    // Check authentication first
-    if (!checkAuth()) {
-      return;
-    }
-
     presenterRef.current = new ChatbotPresenter();
     presenterRef.current.setView({ setState });
     presenterRef.current.initialize();
@@ -52,12 +35,7 @@ const ChatbotView = () => {
     }
   }, [state.messages, state.isTyping]);
 
-  const { messages, inputText, isTyping, loading, error, requiresAuth } = state;
-
-  // Show login prompt if authentication is required
-  if (requiresAuth) {
-    return <StylishLoginPrompt message="Silahkan login untuk menggunakan AI Chatbot" />;
-  }
+  const { messages, inputText, isTyping, loading, error } = state;
 
   const handleInputChange = (e) => {
     if (presenterRef.current) {
@@ -136,8 +114,12 @@ const ChatbotView = () => {
                   }`}
                 >
                   {message.sender === "bot" && (
-                    <div className="w-8 h-8 bg-[#4F3422] rounded-full flex items-center justify-center flex-shrink-0 mb-1 shadow-lg">
-                      <span className="text-white text-sm font-medium">T</span>
+                    <div className="w-8 h-8 bg-[#4F3422] rounded-full flex items-center justify-center flex-shrink-0 mb-1 shadow-lg overflow-hidden">
+                      <img
+                        src="/bot.png"
+                        alt="Bot Avatar"
+                        className="w-6 h-6 object-contain"
+                      />
                     </div>
                   )}
 

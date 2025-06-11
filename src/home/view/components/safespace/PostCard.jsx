@@ -14,22 +14,22 @@ function PostCard({ post }) {
   };
 
   return (
-    <div className="bg-gradient-to-br from-stone-50 to-stone-100 rounded-2xl shadow-lg border border-stone-200 p-4 min-h-[160px] transition-all duration-500 transform">
-      <div className="flex items-start mb-3">
-        <div className="h-8 w-8 rounded-full mr-2 border-2 border-amber-300 bg-amber-100 flex items-center justify-center text-amber-700 font-medium text-xs">
+    <div className="bg-gradient-to-br from-white to-stone-50 rounded-2xl shadow-xl border border-[#251404]/10 p-6 min-h-[180px] transition-all duration-500 transform hover:scale-105 hover:shadow-2xl">
+      <div className="flex items-start mb-4">
+        <div className="h-10 w-10 rounded-full mr-3 border-2 border-[#251404] bg-[#A1BA82]/20 flex items-center justify-center text-[#251404] font-bold text-sm">
           {getInitials(post?.author?.name)}
         </div>
         <div className="flex-1">
-          <h4 className="font-semibold text-stone-800 text-sm">{post?.author?.name || 'Anonymous'}</h4>
-          <p className="text-xs text-stone-500">
+          <h4 className="font-bold text-[#251404] text-base">{post?.author?.name || 'Anonymous'}</h4>
+          <p className="text-xs text-[#251404]/60 font-medium">
             {formatCardDate(getPostDate(post))}
           </p>
         </div>
       </div>
 
-      <p className="text-stone-700 text-sm leading-relaxed mb-3" style={{
+      <p className="text-[#251404]/80 text-sm leading-relaxed mb-4 font-medium" style={{
         display: '-webkit-box',
-        WebkitLineClamp: 3,
+        WebkitLineClamp: 4,
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden'
       }}>
@@ -37,18 +37,18 @@ function PostCard({ post }) {
       </p>
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           <div className="flex items-center text-red-500">
             <Heart className="h-4 w-4 mr-1 fill-current" />
-            <span className="text-sm font-medium">{post?.likes?.length || 0}</span>
+            <span className="text-sm font-bold">{post?.likes_count || post?.likes?.length || 0}</span>
           </div>
-          <div className="flex items-center text-stone-500">
+          <div className="flex items-center text-[#251404]/70">
             <MessageCircle className="h-4 w-4 mr-1" />
-            <span className="text-sm">{post?.comments?.length || 0}</span>
+            <span className="text-sm font-semibold">{post?.comments_count || post?.comments?.length || 0}</span>
           </div>
         </div>
 
-        <div className="text-xs text-amber-700 font-medium bg-amber-100 px-2 py-1 rounded-full">
+        <div className="text-xs text-white font-bold bg-gradient-to-r from-[#A1BA82] to-[#A1BA82]/80 px-3 py-1.5 rounded-full shadow-lg">
           #Trending
         </div>
       </div>

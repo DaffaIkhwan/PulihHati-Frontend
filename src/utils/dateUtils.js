@@ -3,7 +3,7 @@
  */
 
 /**
- * Safely format a date with fallback handling
+ * Safely format a date with fallback handling and proper timezone support
  * @param {string|Date} dateInput - Date string or Date object
  * @param {Object} options - Intl.DateTimeFormat options
  * @param {string} locale - Locale string (default: 'id-ID')
@@ -21,10 +21,10 @@ export const formatDate = (dateInput, options = {}, locale = 'id-ID') => {
     if (typeof dateInput === 'string') {
       // Handle various date formats
       if (dateInput.includes('T') || dateInput.includes('Z')) {
-        // ISO format
+        // ISO format - parse as UTC and convert to local time
         date = new Date(dateInput);
       } else if (dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // YYYY-MM-DD format
+        // YYYY-MM-DD format - treat as local date
         date = new Date(dateInput + 'T00:00:00');
       } else {
         date = new Date(dateInput);
@@ -40,15 +40,21 @@ export const formatDate = (dateInput, options = {}, locale = 'id-ID') => {
       return 'Tanggal tidak valid';
     }
 
-    // Default options
+    // Default options with timezone support
     const defaultOptions = {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
+      timeZone: 'Asia/Jakarta', // WIB timezone
       ...options
     };
 
-    return date.toLocaleDateString(locale, defaultOptions);
+    // Use toLocaleString for better timezone handling when time is included
+    if (options.hour || options.minute) {
+      return date.toLocaleString(locale, defaultOptions);
+    } else {
+      return date.toLocaleDateString(locale, defaultOptions);
+    }
   } catch (error) {
     console.error('Error formatting date:', error, 'Input:', dateInput);
     return 'Error format tanggal';
@@ -56,32 +62,72 @@ export const formatDate = (dateInput, options = {}, locale = 'id-ID') => {
 };
 
 /**
- * Format date for post display (with time)
+ * Format date for post display (with time or relative time for recent posts)
  * @param {string|Date} dateInput - Date input
- * @returns {string} Formatted date with time
+ * @returns {string} Formatted date with time or relative time
  */
 export const formatPostDate = (dateInput) => {
-  return formatDate(dateInput, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  try {
+    if (!dateInput) return 'Tanggal tidak tersedia';
+
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return 'Tanggal tidak valid';
+
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+
+    // Show relative time for posts less than 24 hours old
+    if (diffInHours < 24) {
+      return getRelativeTime(dateInput);
+    }
+
+    // Show full date and time for older posts
+    return formatDate(dateInput, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta'
+    });
+  } catch (error) {
+    console.error('Error formatting post date:', error);
+    return 'Error format tanggal';
+  }
 };
 
 /**
- * Format date for comment display (shorter format)
+ * Format date for comment display (shorter format with relative time for recent comments)
  * @param {string|Date} dateInput - Date input
  * @returns {string} Formatted date for comments
  */
 export const formatCommentDate = (dateInput) => {
-  return formatDate(dateInput, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }, 'en-US');
+  try {
+    if (!dateInput) return 'Tanggal tidak tersedia';
+
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return 'Tanggal tidak valid';
+
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+
+    // Show relative time for comments less than 6 hours old
+    if (diffInHours < 6) {
+      return getRelativeTime(dateInput);
+    }
+
+    // Show short date format for older comments
+    return formatDate(dateInput, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta'
+    }, 'id-ID');
+  } catch (error) {
+    console.error('Error formatting comment date:', error);
+    return 'Error format tanggal';
+  }
 };
 
 /**
@@ -98,7 +144,7 @@ export const formatCardDate = (dateInput) => {
 };
 
 /**
- * Get relative time (e.g., "2 hours ago")
+ * Get relative time (e.g., "2 hours ago") with proper timezone handling
  * @param {string|Date} dateInput - Date input
  * @returns {string} Relative time string
  */
@@ -106,13 +152,24 @@ export const getRelativeTime = (dateInput) => {
   try {
     if (!dateInput) return 'Waktu tidak tersedia';
 
-    const date = new Date(dateInput);
+    // Parse date and ensure it's in the correct timezone
+    let date;
+    if (typeof dateInput === 'string') {
+      // If it's an ISO string, parse it correctly
+      date = new Date(dateInput);
+    } else {
+      date = new Date(dateInput);
+    }
+
     if (isNaN(date.getTime())) return 'Waktu tidak valid';
 
+    // Get current time in Jakarta timezone for accurate comparison
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 
-    if (diffInSeconds < 60) {
+    if (diffInSeconds < 0) {
+      return 'Baru saja'; // Handle future dates
+    } else if (diffInSeconds < 60) {
       return 'Baru saja';
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
@@ -127,7 +184,7 @@ export const getRelativeTime = (dateInput) => {
       return formatCardDate(dateInput);
     }
   } catch (error) {
-    console.error('Error getting relative time:', error);
+    console.error('Error getting relative time:', error, 'Input:', dateInput);
     return 'Waktu tidak valid';
   }
 };

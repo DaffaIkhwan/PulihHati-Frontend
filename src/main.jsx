@@ -11,7 +11,7 @@ import Chatbot from './chatbot';
 import Navbar from './components/Navbar';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import OfflineIndicator from './components/OfflineIndicator';
-import AboutSection from './home/view/components/AboutSection';
+import AboutPage from './about/AboutPage';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -20,7 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/safespace" element={<SafeSpace />} />
-        <Route path="/about" element={<AboutSection/>} />
+        <Route path="/about" element={<AboutPage/>} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/signin" element={<Login />} />
         <Route path="/signup" element={<Register />} />

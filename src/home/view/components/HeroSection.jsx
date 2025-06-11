@@ -19,39 +19,59 @@ function HeroSection({ currentQuote, onNextQuote, onQuoteChange }) {
   }, [onNextQuote]);
 
   return (
-    <section className="w-full min-h-[500px] bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center px-4 py-4">
-      <div className="max-w-4xl w-full bg-white rounded-[40px] shadow-2xl shadow-stone-400/20 flex flex-col lg:flex-row gap-8 justify-center items-center p-8 lg:p-12 backdrop-blur-sm border border-white/50">
-        <div className="flex-shrink-0 transition-transform duration-700 hover:scale-105">
+    <section className="w-full min-h-[600px] relative flex items-center justify-center px-4 py-12">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-10 left-10 w-20 h-20 border-2 border-[#251404] rounded-full"></div>
+        <div className="absolute top-20 right-20 w-16 h-16 bg-[#251404] rounded-full"></div>
+        <div className="absolute bottom-20 left-20 w-12 h-12 border-2 border-[#251404] rounded-full"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-[#251404]/30 rounded-full blur-xl"></div>
+      </div>
+
+      <div className="max-w-5xl w-full bg-white/95 backdrop-blur-lg rounded-[50px] shadow-2xl shadow-[#251404]/30 flex flex-col lg:flex-row gap-8 justify-center items-center p-10 lg:p-16 border border-white/60 relative z-10">
+        <div className="flex-shrink-0 transition-transform duration-700 hover:scale-110 relative">
+          <div className="absolute -inset-4 bg-gradient-to-r from-[#A1BA82]/20 to-[#251404]/20 rounded-full blur-xl"></div>
           <img
-            className="w-80 h-64 object-contain drop-shadow-lg"
+            className="w-80 h-64 object-contain drop-shadow-2xl relative z-10"
             src="/Frame.png"
             alt="Mental Health Illustration"
           />
         </div>
-        <div className="flex-1 max-w-md text-center lg:text-left">
-          <div className="text-stone-800 text-3xl lg:text-4xl font-bold font-['Sora'] leading-relaxed">
-            <div className="relative h-[120px] overflow-hidden">
+        <div className="flex-1 max-w-lg text-center lg:text-left">
+          <div className="text-[#251404] text-3xl lg:text-5xl font-bold font-['Sora'] leading-tight mb-6">
+            <div className="relative h-[140px] overflow-hidden">
               {quotes.map((quote, index) => (
                 <div
                   key={index}
-                  className={`absolute w-full transition-all duration-500 ease-in-out ${
+                  className={`absolute w-full transition-all duration-700 ease-in-out ${
                     index === currentQuote
-                      ? 'opacity-100 translate-y-0'
-                      : 'opacity-0 translate-y-4'
+                      ? 'opacity-100 translate-y-0 scale-100'
+                      : 'opacity-0 translate-y-8 scale-95'
                   }`}
                 >
                   {quote}
                 </div>
               ))}
             </div>
+
+            {/* Decorative line */}
+            <div className="w-20 h-1 bg-gradient-to-r from-[#A1BA82] to-[#251404] rounded-full mx-auto lg:mx-0 my-6"></div>
+
+            {/* Subtitle */}
+            <p className="text-[#251404]/70 text-lg font-medium mb-8">
+              Bersama membangun kesehatan mental yang lebih baik
+            </p>
           </div>
-          <div className="flex justify-center lg:justify-start mt-6 space-x-2">
+
+          <div className="flex justify-center lg:justify-start mt-8 space-x-3">
             {quotes.map((_, index) => (
               <button
                 key={index}
                 onClick={() => onQuoteChange(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentQuote ? 'bg-amber-600 w-6' : 'bg-stone-300'
+                className={`h-3 rounded-full transition-all duration-300 transform hover:scale-110 ${
+                  index === currentQuote
+                    ? 'bg-gradient-to-r from-[#A1BA82] to-[#251404] w-8 shadow-lg'
+                    : 'bg-[#251404]/30 w-3 hover:bg-[#251404]/50'
                 }`}
               />
             ))}

@@ -1,46 +1,68 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import PostCard from './safespace/PostCard';
 import SlideNavigation from './safespace/SlideNavigation';
 import SlideIndicators from './safespace/SlideIndicators';
 
-function SafeSpaceSection({ 
-  popularPosts, 
-  currentSlide, 
-  onPrevSlide, 
-  onNextSlide, 
+function SafeSpaceSection({
+  popularPosts,
+  currentSlide,
+  onPrevSlide,
+  onNextSlide,
   onSlideChange,
-  onNavigate 
+  onNavigate
 }) {
   return (
-    <section className="w-full px-4 py-8">
-      <div className="max-w-4xl mx-auto bg-gradient-to-br from-amber-700 via-amber-700 to-amber-800 rounded-[40px] shadow-2xl shadow-amber-900/30 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10"></div>
+    <section className="w-full px-4 py-16 relative">
+      {/* Enhanced Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-12 right-12 w-32 h-32 bg-[#251404]/15 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute bottom-12 left-12 w-28 h-28 bg-[#A1BA82]/20 rounded-full blur-xl animate-pulse delay-700"></div>
+        <div className="absolute top-1/2 left-1/4 w-20 h-20 bg-[#251404]/8 rounded-full blur-lg animate-pulse delay-1000"></div>
+      </div>
 
-        <div className="relative z-10 p-8 lg:p-12">
-          <h2 className="text-white text-3xl lg:text-4xl font-bold font-['Sora'] text-center mb-8">
-            Safe Space
-          </h2>
+    
+      <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#251404] via-[#4F3422] to-[#251404] rounded-[50px] shadow-2xl shadow-[#251404]/30 relative overflow-hidden border border-[#251404]/20">
+        {/* Enhanced background overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#251404]/20 via-transparent to-[#251404]/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#A1BA82]/8 to-transparent"></div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-[30px] shadow-xl p-6 lg:p-8 backdrop-blur-sm border border-white/20">
-              <div className="text-center space-y-8">
-                <h3 className="text-stone-800 text-xl lg:text-2xl font-semibold font-['Sora'] leading-relaxed">
+        <div className="relative z-10 p-10 lg:p-16">
+
+          <div className="bg-white/95 backdrop-blur-lg rounded-[40px] shadow-2xl p-8 lg:p-12 border border-white/50">
+            <div className="text-center space-y-10">
+              <div>
+                <h3 className="text-[#251404] text-2xl lg:text-3xl font-bold font-['Inter'] leading-tight mb-4">
                   Ruang Aman untuk Berbagi
                 </h3>
-                <p className="text-stone-600 text-base leading-relaxed">
+                <div className="w-20 h-1 bg-gradient-to-r from-[#A1BA82] to-[#251404] rounded-full mx-auto mb-6"></div>
+                <p className="text-[#251404]/80 text-lg font-medium leading-relaxed max-w-2xl mx-auto mb-6 font-['Inter']">
                   Bergabunglah dengan komunitas yang saling mendukung dan memahami perjalanan kesehatan mental Anda.
                 </p>
+                <div className="bg-gradient-to-r from-[#A1BA82]/15 to-[#251404]/15 rounded-xl p-4 max-w-2xl mx-auto border border-[#A1BA82]/20">
+                  <p className="text-[#251404]/90 text-sm font-semibold font-['Inter']">
+                    ✨ <span className="text-[#A1BA82] font-bold">Akses Terbuka:</span> Lihat postingan populer tanpa perlu login!
+                  </p>
+                </div>
+              </div>
 
                 {/* Popular Posts Section */}
                 <div className="py-6">
+                  <div className="mb-4">
+                  </div>
+
                   <div className="relative">
                     {/* Post Card */}
                     {popularPosts.length > 0 ? (
                       <PostCard post={popularPosts[currentSlide]} />
                     ) : (
-                      <div className="text-center text-white py-8">
-                        <p className="text-lg">Belum ada post populer</p>
-                        <p className="text-sm opacity-80">Mulai berbagi cerita untuk melihat post terpopuler</p>
+                      <div className="text-center py-8">
+                        <div className="bg-gradient-to-br from-[#A1BA82]/10 to-[#251404]/5 rounded-xl p-6 border border-[#251404]/10">
+                          <div className="text-3xl mb-3">📝</div>
+                          <h5 className="text-[#251404] text-base font-bold mb-1">Memuat Post Populer...</h5>
+                          <p className="text-[#251404]/70 text-xs font-medium">
+                            Sedang mengambil cerita inspiratif dari komunitas
+                          </p>
+                        </div>
                       </div>
                     )}
 
@@ -63,13 +85,16 @@ function SafeSpaceSection({
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onNavigate('/safespace')}
-                  className="bg-gradient-to-r from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-stone-800 px-8 py-4 rounded-full border-2 border-amber-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 font-semibold font-['Sora']"
-                >
-                  Bergabung Sekarang
-                </button>
-              </div>
+              <button
+                onClick={() => onNavigate('/safespace')}
+                className="bg-gradient-to-r from-[#A1BA82] to-[#A1BA82]/80 hover:from-[#A1BA82]/80 hover:to-[#A1BA82] text-white px-10 py-4 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-2xl active:scale-95 font-bold text-lg font-['Inter'] shadow-xl inline-flex items-center gap-3"
+              >
+                <span>Bergabung Sekarang</span>
+                <div className="w-6 h-6 relative">
+                  <div className="absolute top-1/2 left-1 w-4 h-0.5 bg-white rounded transform -translate-y-1/2 transition-transform group-hover:translate-x-1"></div>
+                  <div className="absolute top-1/2 right-1 w-3 h-3 border-r-2 border-t-2 border-white transform rotate-45 -translate-y-1/2 transition-transform group-hover:rotate-90"></div>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -78,4 +103,13 @@ function SafeSpaceSection({
   );
 }
 
-export default SafeSpaceSection; 
+SafeSpaceSection.propTypes = {
+  popularPosts: PropTypes.array.isRequired,
+  currentSlide: PropTypes.number.isRequired,
+  onPrevSlide: PropTypes.func.isRequired,
+  onNextSlide: PropTypes.func.isRequired,
+  onSlideChange: PropTypes.func.isRequired,
+  onNavigate: PropTypes.func.isRequired
+};
+
+export default SafeSpaceSection;

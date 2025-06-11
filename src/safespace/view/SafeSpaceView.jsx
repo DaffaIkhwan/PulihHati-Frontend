@@ -103,9 +103,7 @@ function SafeSpaceView({ presenter }) {
     presenter.updateInlineComment(postId, text);
   }, [presenter]);
 
-  const handleAvatarUpload = useCallback((file) => {
-    presenter.handleAvatarUpload(file);
-  }, [presenter]);
+
 
   const handleMarkAllAsRead = useCallback(() => {
     presenter.handleMarkAllAsRead();
@@ -244,16 +242,16 @@ function SafeSpaceView({ presenter }) {
 
           {/* Read-only mode banner */}
           {showReadOnlyBanner && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 flex items-center justify-between shadow-sm">
+            <div className="bg-stone-50 border border-stone-200 text-stone-800 px-4 py-3 rounded-lg mb-6 flex items-center justify-between shadow-sm">
               <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 mr-2 text-stone-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
                 <span className="font-medium">Mode Baca Saja - Login untuk berinteraksi dengan posts</span>
               </div>
               <button
                 onClick={() => window.location.href = '/signin'}
-                className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm"
+                className="bg-[#251404] hover:bg-[#4F3422] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm"
               >
                 Login
               </button>
@@ -298,7 +296,6 @@ function SafeSpaceView({ presenter }) {
             <ProfileTab
               user={user}
               posts={posts}
-              onAvatarUpload={handleAvatarUpload}
             />
           )}
 
