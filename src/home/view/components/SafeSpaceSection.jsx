@@ -12,33 +12,33 @@ function SafeSpaceSection({
   onNavigate
 }) {
   return (
-    <section className="w-full px-4 py-16 relative">
-      {/* Enhanced Background decorative elements */}
+    <section className="w-full px-2 sm:px-4 py-12 sm:py-16 relative">
+      {/* Enhanced Background decorative elements - Responsive */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-12 right-12 w-32 h-32 bg-[#251404]/15 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-12 left-12 w-28 h-28 bg-[#A1BA82]/20 rounded-full blur-xl animate-pulse delay-700"></div>
-        <div className="absolute top-1/2 left-1/4 w-20 h-20 bg-[#251404]/8 rounded-full blur-lg animate-pulse delay-1000"></div>
+        <div className="absolute top-6 sm:top-12 right-6 sm:right-12 w-16 sm:w-32 h-16 sm:h-32 bg-[#251404]/15 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute bottom-6 sm:bottom-12 left-6 sm:left-12 w-14 sm:w-28 h-14 sm:h-28 bg-[#A1BA82]/20 rounded-full blur-xl animate-pulse delay-700"></div>
+        <div className="absolute top-1/2 left-1/4 w-10 sm:w-20 h-10 sm:h-20 bg-[#251404]/8 rounded-full blur-lg animate-pulse delay-1000"></div>
       </div>
 
-    
-      <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#251404] via-[#4F3422] to-[#251404] rounded-[50px] shadow-2xl shadow-[#251404]/30 relative overflow-hidden border border-[#251404]/20">
+
+      <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#251404] via-[#4F3422] to-[#251404] rounded-[30px] sm:rounded-[50px] shadow-2xl shadow-[#251404]/30 relative overflow-hidden border border-[#251404]/20">
         {/* Enhanced background overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#251404]/20 via-transparent to-[#251404]/20"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#A1BA82]/8 to-transparent"></div>
 
-        <div className="relative z-10 p-10 lg:p-16">
+        <div className="relative z-10 p-6 sm:p-10 lg:p-16">
 
-          <div className="bg-white/95 backdrop-blur-lg rounded-[40px] shadow-2xl p-8 lg:p-12 border border-white/50">
-            <div className="text-center space-y-10">
+          <div className="bg-white/95 backdrop-blur-lg rounded-[25px] sm:rounded-[40px] shadow-2xl p-6 sm:p-8 lg:p-12 border border-white/50">
+            <div className="text-center space-y-6 sm:space-y-10">
               <div>
-                <h3 className="text-[#251404] text-2xl lg:text-3xl font-bold font-['Inter'] leading-tight mb-4">
+                <h3 className="text-[#251404] text-xl sm:text-2xl lg:text-3xl font-bold font-['Inter'] leading-tight mb-3 sm:mb-4">
                   Ruang Aman untuk Berbagi
                 </h3>
-                <div className="w-20 h-1 bg-gradient-to-r from-[#A1BA82] to-[#251404] rounded-full mx-auto mb-6"></div>
-                <p className="text-[#251404]/80 text-lg font-medium leading-relaxed max-w-2xl mx-auto mb-6 font-['Inter']">
+                <div className="w-16 sm:w-20 h-1 bg-gradient-to-r from-[#A1BA82] to-[#251404] rounded-full mx-auto mb-4 sm:mb-6"></div>
+                <p className="text-[#251404]/80 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto mb-4 sm:mb-6 font-['Inter'] px-2 sm:px-0">
                   Bergabunglah dengan komunitas yang saling mendukung dan memahami perjalanan kesehatan mental Anda.
                 </p>
-                <div className="bg-gradient-to-r from-[#A1BA82]/15 to-[#251404]/15 rounded-xl p-4 max-w-2xl mx-auto border border-[#A1BA82]/20">
+                <div className="bg-gradient-to-r from-[#A1BA82]/15 to-[#251404]/15 rounded-xl p-3 sm:p-4 max-w-2xl mx-auto border border-[#A1BA82]/20">
                   <p className="text-[#251404]/90 text-sm font-semibold font-['Inter']">
                     ✨ <span className="text-[#A1BA82] font-bold">Akses Terbuka:</span> Lihat postingan populer tanpa perlu login!
                   </p>
