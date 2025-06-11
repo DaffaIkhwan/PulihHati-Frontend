@@ -40,43 +40,60 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
-// Service Worker DISABLED - Was causing offline redirect issues
+// SERVICE WORKER COMPLETELY DISABLED - Was causing offline redirect issues
 // This fixes the problem where login redirects to offline page
-console.log('🚫 Service Worker disabled to prevent offline redirect issues');
+console.log('🚫 Service Worker COMPLETELY DISABLED to prevent offline redirect issues');
 
-// Force unregister any existing service workers
+// AGGRESSIVE SERVICE WORKER REMOVAL
 if ('serviceWorker' in navigator) {
-  // Immediate unregister
+  // Immediate and aggressive unregister
   navigator.serviceWorker.getRegistrations().then(registrations => {
     if (registrations.length > 0) {
-      console.log(`🗑️ Found ${registrations.length} service worker(s) to unregister`);
+      console.log(`🗑️ FORCE REMOVING ${registrations.length} service worker(s)`);
       registrations.forEach(registration => {
         registration.unregister().then(success => {
           if (success) {
-            console.log('✅ Successfully unregistered service worker:', registration.scope);
+            console.log('✅ FORCE REMOVED service worker:', registration.scope);
           } else {
-            console.log('❌ Failed to unregister service worker:', registration.scope);
+            console.log('❌ Failed to remove service worker:', registration.scope);
           }
         });
       });
-
-      // Force reload after unregistering
-      setTimeout(() => {
-        console.log('🔄 Reloading page to ensure clean state...');
-        window.location.reload();
-      }, 1000);
     } else {
-      console.log('✅ No service workers found - clean state');
+      console.log('✅ No service workers found - CLEAN STATE CONFIRMED');
     }
   }).catch(error => {
     console.error('❌ Error checking service workers:', error);
   });
 
-  // Also listen for any new service worker registrations and block them
+  // Block any new service worker registrations
+  const originalRegister = navigator.serviceWorker.register;
+  navigator.serviceWorker.register = function() {
+    console.log('🚫 BLOCKED service worker registration attempt');
+    return Promise.reject(new Error('Service Worker registration blocked'));
+  };
+
+  // Block controller changes
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('🚫 Blocking new service worker registration');
+    console.log('🚫 BLOCKING service worker controller change');
     navigator.serviceWorker.getRegistrations().then(registrations => {
       registrations.forEach(registration => registration.unregister());
     });
+  });
+}
+
+// Ensure no offline caching
+if ('caches' in window) {
+  caches.keys().then(cacheNames => {
+    if (cacheNames.length > 0) {
+      console.log('🗑️ Clearing all caches:', cacheNames);
+      return Promise.all(
+        cacheNames.map(cacheName => caches.delete(cacheName))
+      );
+    }
+  }).then(() => {
+    console.log('✅ All caches cleared');
+  }).catch(error => {
+    console.error('❌ Error clearing caches:', error);
   });
 }

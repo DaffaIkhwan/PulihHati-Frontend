@@ -196,9 +196,9 @@ class AuthPresenter {
         isAuthenticated: true
       });
 
-      // Redirect after successful login
+      // Redirect after successful login - FIX: Change /home to / (root)
       setTimeout(() => {
-        window.location.href = '/home';
+        window.location.href = '/';
       }, 1000);
 
     } catch (error) {
@@ -233,9 +233,9 @@ class AuthPresenter {
         isAuthenticated: true
       });
 
-      // Redirect after successful registration
+      // Redirect after successful registration - FIX: Change /home to / (root)
       setTimeout(() => {
-        window.location.href = '/home';
+        window.location.href = '/';
       }, 1000);
 
     } catch (error) {
