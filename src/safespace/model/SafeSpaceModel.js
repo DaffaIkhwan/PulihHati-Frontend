@@ -154,7 +154,15 @@ class SafeSpaceModel {
 
         if (append && page > 1) {
           const existingPosts = this.getCache('posts_all') || [];
-          posts = [...existingPosts, ...posts];
+          // Filter out duplicates based on _id or id
+          const newPosts = posts.filter(newPost =>
+            !existingPosts.some(existingPost =>
+              (existingPost._id && newPost._id && existingPost._id === newPost._id) ||
+              (existingPost.id && newPost.id && existingPost.id === newPost.id)
+            )
+          );
+          posts = [...existingPosts, ...newPosts];
+          console.log(`Appended ${newPosts.length} new posts, total: ${posts.length}`);
         }
 
         this.setCache('posts_all', posts);
@@ -233,27 +241,39 @@ class SafeSpaceModel {
   // Check if there are more posts to load
   async hasMorePosts(page = 1, limit = 10) {
     try {
+      console.log(`Checking if there are more posts after page ${page}`);
+
       // First check cached pagination info
       const paginationInfo = this.getCache('pagination_info');
       if (paginationInfo) {
-        return paginationInfo.hasNext || page < paginationInfo.pages;
+        console.log('Using cached pagination info:', paginationInfo);
+        const hasMore = paginationInfo.hasNext || page < paginationInfo.pages;
+        console.log(`Has more posts: ${hasMore}`);
+        return hasMore;
       }
 
-      // Fallback: check by making a request
+      // Fallback: check by making a request for next page
+      const nextPage = page + 1;
       const token = localStorage.getItem('token');
       let endpoint = '/safespace/posts/public';
 
       // If user is authenticated, try authenticated endpoint first
       if (token) {
         try {
-          const response = await api.get(`/safespace/posts?page=${page + 1}&limit=1`);
+          console.log(`Checking authenticated endpoint for page ${nextPage}`);
+          const response = await api.get(`/safespace/posts?page=${nextPage}&limit=1`);
           if (response.data && response.data.posts) {
-            return response.data.posts.length > 0;
+            const hasMore = response.data.posts.length > 0;
+            console.log(`Authenticated check - has more: ${hasMore}`);
+            return hasMore;
           } else if (Array.isArray(response.data)) {
-            return response.data.length > 0;
+            const hasMore = response.data.length > 0;
+            console.log(`Authenticated check (array) - has more: ${hasMore}`);
+            return hasMore;
           }
           return false;
         } catch (authError) {
+          console.error('Auth check failed:', authError);
           // If auth fails, fall back to public endpoint
           if (authError.response?.status === 401) {
             localStorage.removeItem('token');
@@ -262,16 +282,23 @@ class SafeSpaceModel {
       }
 
       // Try public endpoint
-      const response = await api.get(`${endpoint}?page=${page + 1}&limit=1`);
+      console.log(`Checking public endpoint for page ${nextPage}`);
+      const response = await api.get(`${endpoint}?page=${nextPage}&limit=1`);
       if (response.data && response.data.posts) {
-        return response.data.posts.length > 0;
+        const hasMore = response.data.posts.length > 0;
+        console.log(`Public check - has more: ${hasMore}`);
+        return hasMore;
       } else if (Array.isArray(response.data)) {
-        return response.data.length > 0;
+        const hasMore = response.data.length > 0;
+        console.log(`Public check (array) - has more: ${hasMore}`);
+        return hasMore;
       }
 
+      console.log('No more posts found');
       return false;
     } catch (error) {
       console.error('Error checking for more posts:', error);
+      // If there's an error, assume no more posts to prevent infinite loading
       return false;
     }
   }

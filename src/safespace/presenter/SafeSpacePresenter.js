@@ -430,13 +430,32 @@ class SafeSpacePresenter {
     }
 
     try {
-      const updatedLikes = await this.model.likePost(postId);
+      console.log('Liking post:', postId);
+      const response = await this.model.likePost(postId);
+      console.log('Like response:', response);
+
+      // Update the post with new likes data
       this.updateState({
-        posts: this.state.posts.map(post =>
-          (post._id === postId || post.id === postId)
-            ? { ...post, likes: updatedLikes }
-            : post
-        )
+        posts: this.state.posts.map(post => {
+          if (post._id === postId || post.id === postId) {
+            return {
+              ...post,
+              likes: response.likes || response,
+              likes_count: response.likes_count || (response.likes ? response.likes.length : 0),
+              liked: response.liked !== undefined ? response.liked : !post.liked
+            };
+          }
+          return post;
+        }),
+        // Also update selectedPost if it's the same post
+        selectedPost: this.state.selectedPost && (this.state.selectedPost._id === postId || this.state.selectedPost.id === postId)
+          ? {
+              ...this.state.selectedPost,
+              likes: response.likes || response,
+              likes_count: response.likes_count || (response.likes ? response.likes.length : 0),
+              liked: response.liked !== undefined ? response.liked : !this.state.selectedPost.liked
+            }
+          : this.state.selectedPost
       });
     } catch (err) {
       console.error('Error liking post:', err);
