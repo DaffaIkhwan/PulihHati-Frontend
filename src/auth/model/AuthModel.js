@@ -9,6 +9,8 @@ class AuthModel {
   // Login user
   async login(email, password) {
     try {
+      console.log('🔐 Attempting login to:', api.defaults.baseURL);
+
       const response = await api.post('/auth/login', {
         email,
         password
@@ -23,10 +25,23 @@ class AuthModel {
       // Set default authorization header
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
+      console.log('✅ Login successful');
       return { token, user };
     } catch (error) {
-      console.error('Login error:', error);
-      throw new Error(error.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('❌ Login error:', error);
+
+      // Handle network errors specifically
+      if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
+        throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+      }
+
+      // Handle timeout errors
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Koneksi timeout. Server membutuhkan waktu terlalu lama untuk merespons.');
+      }
+
+      // Handle other errors
+      throw new Error(error.response?.data?.message || 'Login gagal. Periksa email dan password Anda.');
     }
   }
 

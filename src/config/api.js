@@ -8,7 +8,7 @@ export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
 
   // Request timeout in milliseconds
-  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT) || 15000, // Increased timeout for deployed backend
+  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000, // Increased timeout for Railway backend
 
   // App environment
   APP_ENV: import.meta.env.VITE_APP_ENV || 'development',
@@ -20,8 +20,8 @@ export const API_CONFIG = {
 // Available backend options for easy switching
 export const BACKEND_OPTIONS = {
   LOCAL: 'http://localhost:5000/api',
-  DEPLOYED: 'https://pulih-hati-backend.vercel.app/api', // Domain issue (404)
-  DEPLOYED_WORKING: 'https://pulih-hati-backend-obpvpxn7l-daffaikhwans-projects.vercel.app/api' // Working deployment URL
+  RAILWAY: 'https://pulih-hati-backend-production.up.railway.app/api', // Railway deployment (Primary)
+  VERCEL: 'https://pulih-hati-backend-obpvpxn7l-daffaikhwans-projects.vercel.app/api' // Vercel deployment (Alternative)
 };
 
 // Test backend connectivity

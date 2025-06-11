@@ -93,7 +93,14 @@ const pwaConfig = {
   workbox: {
     globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
     navigateFallback: '/offline.html',
-    navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+    navigateFallbackDenylist: [
+      /^\/_/,
+      /\/[^/?]+\.[^/]+$/,
+      /\/signin/,
+      /\/signup/,
+      /\/login/,
+      /api\//
+    ],
     runtimeCaching: [
       // Cache for Local Development API
       {
@@ -118,7 +125,20 @@ const pwaConfig = {
             maxEntries: 100,
             maxAgeSeconds: 60 * 60 * 24 // 24 hours
           },
-          networkTimeoutSeconds: 10
+          networkTimeoutSeconds: 30 // Increased timeout for Railway
+        }
+      },
+      // Cache for Production API (Vercel) - Alternative
+      {
+        urlPattern: /^https:\/\/pulih-hati-backend-obpvpxn7l-daffaikhwans-projects\.vercel\.app\/api\//,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'api-cache-vercel',
+          expiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 60 * 60 * 24 // 24 hours
+          },
+          networkTimeoutSeconds: 30 // Increased timeout for Vercel
         }
       },
       {
