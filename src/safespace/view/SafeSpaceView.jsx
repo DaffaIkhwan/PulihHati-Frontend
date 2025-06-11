@@ -193,6 +193,24 @@ function SafeSpaceView({ presenter }) {
     }));
   }, []);
 
+  const handleEditComment = useCallback(async (commentId, newContent) => {
+    try {
+      return await presenter.handleEditComment(commentId, newContent);
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      throw error;
+    }
+  }, [presenter]);
+
+  const handleDeleteComment = useCallback(async (commentId) => {
+    try {
+      await presenter.handleDeleteComment(commentId);
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  }, [presenter]);
+
 
 
   // Memoize filtered posts to prevent unnecessary recalculations
@@ -330,6 +348,8 @@ function SafeSpaceView({ presenter }) {
           onClose={handleCloseModal}
           onNewComment={handleNewComment}
           onNewCommentChange={handleNewCommentChange}
+          onEditComment={handleEditComment}
+          onDeleteComment={handleDeleteComment}
         />
       )}
 

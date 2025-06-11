@@ -87,9 +87,16 @@ function PostCard({
                 <h3 className="font-semibold text-stone-800">
                   {post.is_anonymous ? 'Anonim' : post.author.name}
                 </h3>
-                <p className="text-sm text-stone-500">
-                  {formatPostDate(getPostDate(post))}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-stone-500">
+                    {formatPostDate(getPostDate(post))}
+                  </p>
+                  {post.updated_at && post.updated_at !== post.created_at && (
+                    <span className="text-xs text-stone-400 italic">
+                      • edited {formatPostDate(post.updated_at)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -62,15 +62,6 @@ function SafeSpaceSection({
                           <p className="text-[#251404]/70 text-xs font-medium">
                             Sedang mengambil cerita inspiratif dari komunitas
                           </p>
-                          {/* Debug info */}
-                          {import.meta.env.DEV && (
-                            <div className="mt-4 p-2 bg-yellow-100 rounded text-xs text-left">
-                              <strong>Debug:</strong><br/>
-                              popularPosts: {JSON.stringify(popularPosts)}<br/>
-                              length: {popularPosts?.length}<br/>
-                              type: {typeof popularPosts}
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}

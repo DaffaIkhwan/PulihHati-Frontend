@@ -24,7 +24,7 @@ function HomeView() {
     moodHistory: [],
     selectedMood: null,
     showChart: false,
-    loading: true,
+    loading: false, // Start with false for immediate UI render
     error: null,
     success: null,
     popularPosts: [],
@@ -40,37 +40,21 @@ function HomeView() {
       const model = new HomeModel();
       const presenter = new HomePresenter(model);
       
-      // Set initial state
-      const initialState = {
-        moodHistory: [],
-        selectedMood: null,
-        showChart: false,
-        loading: true,
-        error: null,
-        success: null,
-        popularPosts: [],
-        currentSlide: 0,
-        currentQuote: 0
-      };
-      
       presenter.setStateUpdater((newState) => {
-        console.log('State updated:', newState);
-        setState(newState);
+        console.log('🔄 HomeView state updated:', newState);
+        setState(prevState => {
+          const updatedState = { ...prevState, ...newState };
+          console.log('📊 Updated moodHistory length:', updatedState.moodHistory?.length);
+          return updatedState;
+        });
       });
-      
+
       presenterRef.current = presenter;
-      
-      // Initialize with initial state
-      presenter.updateState(initialState);
-      
-      // Start initialization
+
+      // Start initialization immediately without blocking UI
       presenter.initialize().catch(error => {
         console.error('Error during initialization:', error);
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: 'Gagal memuat data: ' + error.message
-        }));
+        // Don't show error for background loading failures
       });
     } catch (error) {
       console.error('Error creating presenter:', error);
@@ -131,23 +115,7 @@ function HomeView() {
     window.location.href = path;
   };
 
-  if (state.loading) {
-    return (
-      <div className="min-h-screen bg-[#A1BA82] flex items-center justify-center relative overflow-hidden">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-[#251404]/10 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-28 h-28 bg-white/15 rounded-full blur-xl animate-pulse delay-300"></div>
-        </div>
-
-        <div className="text-center relative z-10">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#251404]/20 border-t-[#251404] mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-[#251404] mb-2 font-['Sora']">Memuat PulihHati</h2>
-          <p className="text-[#251404]/70 font-medium">Menyiapkan pengalaman terbaik untuk Anda...</p>
-        </div>
-      </div>
-    );
-  }
+  // Removed loading screen for faster initial render
 
   if (state.error) {
     return (

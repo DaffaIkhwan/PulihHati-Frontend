@@ -21,46 +21,67 @@ class HomePresenter {
 
   async initialize() {
     console.log('Presenter: Initializing...');
+
+    // Set loading false immediately to show UI faster
+    this.updateState({
+      loading: false,
+      moodHistory: this.generateEmptyMoodHistory(),
+      popularPosts: []
+    });
+
     try {
-      // Fetch mood history and popular posts in parallel
-      const [moodHistory, popularPosts] = await Promise.all([
+      // Fetch data in background without blocking UI
+      const [moodHistory, popularPosts] = await Promise.allSettled([
         this.fetchMoodHistory(),
         this.fetchPopularPosts()
       ]);
 
       console.log('Presenter: Data fetched successfully');
       this.updateState({
-        moodHistory,
-        popularPosts,
-        loading: false
+        moodHistory: moodHistory.status === 'fulfilled' ? moodHistory.value : this.generateEmptyMoodHistory(),
+        popularPosts: popularPosts.status === 'fulfilled' ? popularPosts.value : []
       });
     } catch (error) {
       console.error('Presenter: Error during initialization:', error);
-      this.updateState({
-        loading: false,
-        error: error.message || 'Gagal memuat data'
-      });
-      throw error; // Re-throw to be caught by the view
+      // Don't show error for background loading failures
     }
   }
 
+  // Helper function to get current WIB date consistently
+  getWIBDate() {
+    // Create a new date and convert to WIB timezone
+    const now = new Date();
+    const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000)); // Add 7 hours for WIB
+    return wibTime;
+  }
+
+  // Helper function to format date as YYYY-MM-DD in WIB
+  formatWIBDate(date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   generateEmptyMoodHistory() {
-    console.log('Presenter: Generating empty mood history');
     const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const today = new Date();
+    const wibToday = this.getWIBDate();
+    const todayStr = this.formatWIBDate(wibToday);
     const result = [];
 
+    console.log(`🕐 Current WIB time: ${wibToday.toISOString()}`);
+    console.log(`📅 Today's date (WIB): ${todayStr}`);
+
+    // Generate 7 days with today on the RIGHT (index 6)
+    // i=6 means 6 days ago (leftmost), i=0 means today (rightmost)
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
+      const date = new Date(wibToday);
+      date.setUTCDate(date.getUTCDate() - i);
 
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-
-      const dayIndex = date.getDay();
+      const dateStr = this.formatWIBDate(date);
+      const dayIndex = date.getUTCDay(); // 0=Sunday, 1=Monday, etc.
       const dayName = dayNames[dayIndex];
+      const isToday = dateStr === todayStr;
 
       result.push({
         day: dayName,
@@ -68,9 +89,13 @@ class HomePresenter {
         mood: null,
         emoji: null,
         label: null,
-        hasEntry: false
+        hasEntry: false,
+        isToday: isToday
       });
     }
+
+    // Debug: Log the order to verify today is at the end (rightmost)
+    console.log('📊 Generated Empty Mood History Order:', result.map((r, idx) => `${idx}:${r.day}(${r.date.split('-')[2]})${r.isToday ? '👈TODAY' : ''}`).join(' → '));
 
     return result;
   }
@@ -126,40 +151,73 @@ class HomePresenter {
     this.updateState({ loading: true, error: null, success: null });
 
     try {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const todayDate = `${year}-${month}-${day}`;
-
-      const todayDay = now.getDay();
+      // Use consistent WIB date calculation
+      const wibToday = this.getWIBDate();
+      const todayDate = this.formatWIBDate(wibToday);
+      const todayDay = wibToday.getUTCDay();
       const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-      await this.model.saveMood(moodId, todayDate);
+      console.log(`🕐 Current WIB time: ${wibToday.toISOString()}`);
+      console.log(`💾 Saving mood ${moodId} for date ${todayDate} (${dayNames[todayDay]})`);
+
+      const saveResult = await this.model.saveMood(moodId, todayDate);
+      console.log('💾 Mood save result:', saveResult);
 
       this.updateState({
         selectedMood: moodId,
         success: `Mood ${dayNames[todayDay]} berhasil disimpan!`
       });
 
-      // Update mood history
-      const dayNamesShort = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-      const todayShort = dayNamesShort[todayDay];
+      // Refresh mood history from backend to get updated data
+      try {
+        console.log('🔄 Refreshing mood history after save...');
+        const updatedMoodHistory = await this.fetchMoodHistory();
+        console.log('📊 Updated mood history received:', updatedMoodHistory?.map(item =>
+          `${item.day}(${item.date?.split('-')[2]}): mood=${item.mood}, hasEntry=${item.hasEntry}, isToday=${item.isToday}`
+        ));
 
-      this.updateState({
-        moodHistory: this.state.moodHistory.map(item => {
-          if (item.day === todayShort) {
+        // Force state update to trigger re-render
+        this.updateState({
+          moodHistory: updatedMoodHistory,
+          // Clear any previous error
+          error: null
+        });
+        console.log('✅ Mood history refreshed successfully');
+
+        // Additional debug: Log final state
+        setTimeout(() => {
+          console.log('📊 Final mood history state:', this.state.moodHistory?.map(item =>
+            `${item.day}(${item.date?.split('-')[2]}): mood=${item.mood}, hasEntry=${item.hasEntry}, isToday=${item.isToday}`
+          ));
+        }, 100);
+
+      } catch (refreshError) {
+        console.error('❌ Failed to refresh mood history:', refreshError);
+        // Fallback: Update local state if refresh fails
+        const dayNamesShort = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+        const fallbackHistory = this.state.moodHistory.map(item => {
+          if (item.date === todayDate) {
             return {
               ...item,
               mood: moodId,
               emoji: this.getMoodEmoji(moodId),
               label: this.getMoodLabel(moodId),
-              hasEntry: true
+              hasEntry: true,
+              isToday: true
             };
           }
           return item;
-        })
-      });
+        });
+
+        console.log('📊 Using fallback mood history:', fallbackHistory?.map(item =>
+          `${item.day}(${item.date?.split('-')[2]}): mood=${item.mood}, hasEntry=${item.hasEntry}, isToday=${item.isToday}`
+        ));
+
+        this.updateState({
+          moodHistory: fallbackHistory,
+          error: null
+        });
+      }
 
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -224,9 +282,37 @@ class HomePresenter {
     return mood ? mood.color : '#6B7280';
   }
 
-  toggleChart() {
+  async toggleChart() {
     console.log('Presenter: Toggling chart');
-    this.updateState({ showChart: !this.state.showChart });
+    const newShowChart = !this.state.showChart;
+
+    // Update state to show/hide chart
+    this.updateState({ showChart: newShowChart });
+
+    // If showing chart and we don't have fresh mood data, fetch it
+    if (newShowChart) {
+      console.log('Presenter: Chart is being shown, fetching fresh mood history...');
+
+      try {
+        // Always fetch fresh mood history when showing chart
+        const freshMoodHistory = await this.fetchMoodHistory();
+        console.log('Presenter: Fresh mood history fetched:', freshMoodHistory?.map(item =>
+          `${item.day}(${item.date?.split('-')[2]}): mood=${item.mood}, hasEntry=${item.hasEntry}, isToday=${item.isToday}`
+        ));
+
+        // Update state with fresh data
+        this.updateState({
+          moodHistory: freshMoodHistory,
+          error: null // Clear any previous errors
+        });
+      } catch (error) {
+        console.error('Presenter: Error fetching mood history for chart:', error);
+        // Don't hide chart on error, just show error message
+        this.updateState({
+          error: 'Gagal memuat data mood. Silakan coba lagi.'
+        });
+      }
+    }
   }
 
   nextSlide() {
@@ -277,7 +363,7 @@ class HomePresenter {
     console.log('Presenter: Updating state with:', newState);
     this.state = { ...this.state, ...newState };
     if (this.setState) {
-      this.setState(this.state);
+      this.setState(newState); // Pass newState directly to trigger React update
     }
   }
 }

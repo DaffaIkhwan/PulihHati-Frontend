@@ -98,19 +98,35 @@ class SafeSpacePresenter {
 
     } catch (error) {
       console.error('Error during initialization:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data
+      });
 
-      // For read-only mode, show a more user-friendly message
-      const isReadOnlyError = error.message && (
+      // Provide more specific error messages based on error type
+      let errorMessage = 'Failed to load data. Please try again.';
+
+      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+        errorMessage = 'Cannot connect to server. Please check your internet connection.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication required. Please login to access SafeSpace.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'SafeSpace service not found. Please try again later.';
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Server error occurred. Please try again in a moment.';
+      } else if (error.message && (
         error.message.includes('Cannot connect to server') ||
         error.message.includes('Failed to fetch posts') ||
         error.message.includes('endpoint not found')
-      );
+      )) {
+        errorMessage = 'Unable to load posts. Please check your connection and try again.';
+      }
 
       this.updateState({
         loading: false,
-        error: isReadOnlyError
-          ? 'Unable to load posts. Please check your connection and try again.'
-          : 'Failed to load data. Please try again.',
+        error: errorMessage,
         posts: [] // Ensure posts is empty array instead of undefined
       });
     }
@@ -932,6 +948,101 @@ class SafeSpacePresenter {
       editContent: '',
       error: null
     });
+  }
+
+  // Handle edit comment
+  async handleEditComment(commentId, newContent) {
+    try {
+      this.updateState({ loading: true, error: null });
+
+      const updatedComment = await this.model.updateComment(commentId, newContent);
+
+      // Update the comment in posts state
+      const updatedPosts = this.state.posts.map(post => {
+        if (Array.isArray(post.comments)) {
+          const updatedComments = post.comments.map(comment =>
+            (comment.id === commentId || comment._id === commentId) ? updatedComment : comment
+          );
+          return { ...post, comments: updatedComments };
+        }
+        return post;
+      });
+
+      // Also update selectedPost if it contains the edited comment
+      let updatedSelectedPost = this.state.selectedPost;
+      if (updatedSelectedPost && Array.isArray(updatedSelectedPost.comments)) {
+        const updatedSelectedComments = updatedSelectedPost.comments.map(comment =>
+          (comment.id === commentId || comment._id === commentId) ? updatedComment : comment
+        );
+        updatedSelectedPost = { ...updatedSelectedPost, comments: updatedSelectedComments };
+      }
+
+      this.updateState({
+        posts: updatedPosts,
+        selectedPost: updatedSelectedPost,
+        loading: false
+      });
+
+      return updatedComment;
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      this.updateState({
+        error: error.message || 'Failed to edit comment. Please try again.',
+        loading: false
+      });
+      throw error;
+    }
+  }
+
+  // Handle delete comment
+  async handleDeleteComment(commentId) {
+    try {
+      this.updateState({ loading: true, error: null });
+
+      await this.model.deleteComment(commentId);
+
+      // Remove the comment from posts state
+      const updatedPosts = this.state.posts.map(post => {
+        if (Array.isArray(post.comments)) {
+          const filteredComments = post.comments.filter(comment =>
+            comment.id !== commentId && comment._id !== commentId
+          );
+          return {
+            ...post,
+            comments: filteredComments,
+            comments_count: Math.max(0, (post.comments_count || 0) - 1)
+          };
+        }
+        return post;
+      });
+
+      // Also update selectedPost if it contains the deleted comment
+      let updatedSelectedPost = this.state.selectedPost;
+      if (updatedSelectedPost && Array.isArray(updatedSelectedPost.comments)) {
+        const filteredSelectedComments = updatedSelectedPost.comments.filter(comment =>
+          comment.id !== commentId && comment._id !== commentId
+        );
+        updatedSelectedPost = {
+          ...updatedSelectedPost,
+          comments: filteredSelectedComments,
+          comments_count: Math.max(0, (updatedSelectedPost.comments_count || 0) - 1)
+        };
+      }
+
+      this.updateState({
+        posts: updatedPosts,
+        selectedPost: updatedSelectedPost,
+        loading: false
+      });
+
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      this.updateState({
+        error: error.message || 'Failed to delete comment. Please try again.',
+        loading: false
+      });
+      throw error;
+    }
   }
 
   // Handle delete post

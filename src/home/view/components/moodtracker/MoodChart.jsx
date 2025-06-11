@@ -10,15 +10,27 @@ const moodTypes = [
 ];
 
 function MoodChart({ moodHistory }) {
-  // Convert mood ID to chart value (lower ID = higher value for better mood)
+  // Debug: Log mood history to verify updates
+  console.log('📊 MoodChart received data:', moodHistory?.map(item =>
+    `${item.day}(${item.date?.split('-')[2]}): mood=${item.mood}, hasEntry=${item.hasEntry}`
+  ));
+
+  // Convert mood ID to chart value with very dramatic differences
   const getMoodChartValue = (moodId) => {
     if (!moodId) return 0;
-    // Invert the scale: ID 1 (Sangat Baik) = 5, ID 5 (Sangat Buruk) = 1
-    return 6 - moodId;
+    // More dramatic scaling for extremely clear visual distinction
+    switch(moodId) {
+      case 1: return 100; // Sangat Baik - 100% height (full)
+      case 2: return 65;  // Baik - 65% height (much more different from Sangat Baik)
+      case 3: return 40;  // Biasa - 40% height (middle)
+      case 4: return 20;  // Buruk - 20% height (low)
+      case 5: return 8;   // Sangat Buruk - 8% height (very low)
+      default: return 0;
+    }
   };
 
-  // Use fixed max value of 5 for consistent scaling
-  const maxChartValue = 5; // Since our chart values range from 1-5
+  // Use fixed max value of 100 for percentage-based scaling
+  const maxChartValue = 100;
 
   return (
     <div className="border-t border-stone-200 pt-4 sm:pt-6">
@@ -30,14 +42,20 @@ function MoodChart({ moodHistory }) {
           <span>→</span>
         </div>
       </div>
-      <div className="flex items-end justify-between h-24 sm:h-32 lg:h-36 bg-stone-50 rounded-xl p-3 sm:p-4 overflow-x-auto">
+      <div className="flex items-end justify-between h-40 sm:h-52 lg:h-64 bg-stone-50 rounded-xl p-3 sm:p-4 overflow-x-auto">
         {moodHistory.map((item, index) => {
           const chartValue = getMoodChartValue(item.mood);
-          const maxHeight = window.innerWidth < 640 ? 60 : window.innerWidth < 1024 ? 80 : 100; // Responsive max height
-          const isToday = item.isToday || index === moodHistory.length - 1; // Today should be the last item
+          // Further increased max height for much better visual distinction
+          const maxHeight = window.innerWidth < 640 ? 100 : window.innerWidth < 1024 ? 150 : 180; // Much higher for clearer differences
+
+          // More accurate today detection
+          const today = new Date();
+          const indonesiaTime = new Date(today.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+          const todayStr = `${indonesiaTime.getFullYear()}-${String(indonesiaTime.getMonth() + 1).padStart(2, '0')}-${String(indonesiaTime.getDate()).padStart(2, '0')}`;
+          const isToday = item.date === todayStr;
 
           return (
-            <div key={`${item.day}-${item.date}`} className={`flex flex-col items-center min-w-0 flex-1 relative ${isToday ? 'ring-2 ring-[#A1BA82] ring-opacity-50 rounded-lg p-1' : ''}`}>
+            <div key={`${item.date}-${item.mood}-${item.hasEntry}`} className={`flex flex-col items-center min-w-0 flex-1 relative ${isToday ? 'ring-2 ring-[#A1BA82] ring-opacity-50 rounded-lg p-1' : ''}`}>
               {/* Today indicator */}
               {isToday && (
                 <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
@@ -48,20 +66,30 @@ function MoodChart({ moodHistory }) {
               <div
                 className={`w-4 sm:w-6 lg:w-8 rounded-t-lg mb-1 sm:mb-2 transition-all duration-500 ease-in-out ${isToday ? 'shadow-lg' : ''}`}
                 style={{
-                  height: chartValue > 0 ? `${(chartValue / maxChartValue) * maxHeight}px` : '8px',
-                  backgroundColor: item.mood ? moodTypes.find(m => m.id === item.mood)?.chartColor || '#6B7280' : '#E5E7EB',
-                  minHeight: '8px',
-                  transform: item.hasEntry ? 'scale(1)' : 'scale(0.8)',
-                  opacity: item.hasEntry ? 1 : 0.5,
-                  border: isToday ? '2px solid #A1BA82' : 'none'
+                  // Calculate height based on mood level - no minimum to allow clear differences
+                  height: item.hasEntry
+                    ? `${(chartValue / maxChartValue) * maxHeight}px` // Direct percentage calculation
+                    : `${maxHeight * 0.12}px`, // 12% height for empty days
+                  backgroundColor: item.mood
+                    ? moodTypes.find(m => m.id === item.mood)?.chartColor || '#6B7280'
+                    : '#D1D5DB', // Light gray for empty days
+                  // No minHeight to allow true proportional scaling
+                  transform: item.hasEntry ? 'scale(1)' : 'scale(0.9)', // Less dramatic scale difference
+                  opacity: item.hasEntry ? 1 : 0.7, // Less dramatic opacity difference
+                  border: isToday ? '2px solid #A1BA82' : item.hasEntry ? 'none' : '1px dashed #9CA3AF', // Dashed border for empty days
+                  borderRadius: item.hasEntry ? '4px 4px 0 0' : '4px' // Different border radius for empty days
                 }}
               ></div>
-              <div className={`text-xs sm:text-xs font-medium truncate w-full text-center ${isToday ? 'text-[#A1BA82] font-bold' : 'text-stone-600'}`}>
-                {item.day}
-                {isToday && <span className="block text-[10px] text-[#A1BA82]">Hari Ini</span>}
+              <div className={`text-xs sm:text-xs font-medium w-full text-center ${isToday ? 'text-[#A1BA82] font-bold' : 'text-stone-600'}`}>
+                <div className="truncate">{item.day}</div>
+                {isToday && (
+                  <div className="text-[9px] sm:text-[10px] text-[#A1BA82] font-semibold mt-0.5 leading-tight">
+                    Hari Ini
+                  </div>
+                )}
               </div>
               <div className="text-sm sm:text-base lg:text-lg mt-0.5 sm:mt-1 transition-all duration-300">
-                {item.emoji || '⚪'}
+                {item.hasEntry ? item.emoji : '📊'}
               </div>
             </div>
           );

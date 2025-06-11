@@ -124,7 +124,10 @@ function MoodTracker({
       {/* Chart */}
       {showChart && (
         <>
-          <MoodChart moodHistory={moodHistory} />
+          <MoodChart
+            key={`mood-chart-${moodHistory.length}-${moodHistory.filter(h => h.hasEntry).length}`}
+            moodHistory={moodHistory}
+          />
           <ChartLegend />
         </>
       )}

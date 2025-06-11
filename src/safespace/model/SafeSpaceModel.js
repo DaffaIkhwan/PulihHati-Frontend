@@ -267,29 +267,9 @@ class SafeSpaceModel {
       const token = localStorage.getItem('token');
       let endpoint = '/safespace/posts/public';
 
-      // If user is authenticated, try authenticated endpoint first
-      if (token) {
-        try {
-          console.log(`Checking authenticated endpoint for page ${nextPage}`);
-          const response = await api.get(`/safespace/posts?page=${nextPage}&limit=1`);
-          if (response.data && response.data.posts) {
-            const hasMore = response.data.posts.length > 0;
-            console.log(`Authenticated check - has more: ${hasMore}`);
-            return hasMore;
-          } else if (Array.isArray(response.data)) {
-            const hasMore = response.data.length > 0;
-            console.log(`Authenticated check (array) - has more: ${hasMore}`);
-            return hasMore;
-          }
-          return false;
-        } catch (authError) {
-          console.error('Auth check failed:', authError);
-          // If auth fails, fall back to public endpoint
-          if (authError.response?.status === 401) {
-            localStorage.removeItem('token');
-          }
-        }
-      }
+      // Skip authenticated endpoint check for hasMorePosts to avoid 401 errors
+      // Always use public endpoint for pagination checks to avoid auth issues
+      console.log('Using public endpoint for pagination check to avoid auth issues');
 
       // Try public endpoint
       console.log(`Checking public endpoint for page ${nextPage}`);
@@ -469,6 +449,34 @@ class SafeSpaceModel {
     } catch (error) {
       console.error('Error adding comment:', error);
       throw new Error(error.response?.data?.message || 'Failed to add comment. Please try again later.');
+    }
+  }
+
+  async updateComment(commentId, content) {
+    try {
+      const response = await api.put(`/safespace/comments/${commentId}`, { content });
+
+      // Clear posts cache since comment has changed
+      this.clearCache('posts');
+
+      return response.data;
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      throw new Error(error.response?.data?.message || 'Failed to update comment. Please try again later.');
+    }
+  }
+
+  async deleteComment(commentId) {
+    try {
+      const response = await api.delete(`/safespace/comments/${commentId}`);
+
+      // Clear posts cache since comment has been deleted
+      this.clearCache('posts');
+
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw new Error(error.response?.data?.message || 'Failed to delete comment. Please try again later.');
     }
   }
 

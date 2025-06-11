@@ -100,7 +100,7 @@ class ChatbotModel {
   // Get initial bot message
   getInitialMessage() {
     return this.createMessage(
-      "Hai,😊 selamat datang di Pulih Hati",
+      "Hai,😊 selamat datang di Pulih Hati.",
       'bot',
       true
     );

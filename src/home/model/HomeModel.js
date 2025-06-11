@@ -1,14 +1,16 @@
 import axios from 'axios';
 import { API_CONFIG } from '../../config/api.js';
 
-// Create axios instance
+// Create axios instance with faster timeout for home page
 const api = axios.create({
   baseURL: API_CONFIG.BASE_URL,
-  timeout: API_CONFIG.TIMEOUT,
+  timeout: 3000, // 3 seconds max for home page requests
   headers: {
     'Content-Type': 'application/json'
   }
 });
+
+
 
 // Add request interceptor to add auth token
 api.interceptors.request.use(
@@ -24,66 +26,35 @@ api.interceptors.request.use(
   }
 );
 
-// Fallback data for popular posts
+// Fallback posts for fast loading if API fails or times out
 const fallbackPosts = [
   {
-    _id: 'fallback-1',
-    id: 'fallback-1',
-    content: '🌱 Kamu tidak sendiri dalam perjalanan ini. Setiap langkah kecil menuju kesehatan mental adalah kemajuan yang berarti. Mari kita saling mendukung dan tumbuh bersama di komunitas yang aman ini.',
-    author: {
-      _id: 'admin-1',
-      id: 'admin-1',
-      name: 'PulihHati Team',
-      avatar: null
-    },
-    likes: Array(15).fill().map((_, i) => ({ _id: `like-${i}` })),
-    comments: Array(8).fill().map((_, i) => ({ _id: `comment-${i}` })),
-    likes_count: 15,
-    comments_count: 8,
-    bookmarked: false,
-    liked: false,
-    created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    updated_at: new Date(Date.now() - 86400000).toISOString()
+    id: 1,
+    title: "Selamat datang di SafeSpace!",
+    content: "Bagikan cerita dan dukunganmu di sini. Semua postingan bersifat anonim dan aman.",
+    likes_count: 10,
+    author: "Admin",
+    created_at: new Date().toISOString()
   },
   {
-    _id: 'fallback-2',
-    id: 'fallback-2',
-    content: '💪 Hari ini aku belajar untuk lebih sabar dan menerima diri apa adanya. Proses healing memang tidak mudah, tapi setiap hari adalah kesempatan baru untuk menjadi versi terbaik dari diri kita.',
-    author: {
-      _id: 'admin-2',
-      id: 'admin-2',
-      name: 'Wellness Guide',
-      avatar: null
-    },
-    likes: Array(12).fill().map((_, i) => ({ _id: `like-${i}` })),
-    comments: Array(6).fill().map((_, i) => ({ _id: `comment-${i}` })),
-    likes_count: 12,
-    comments_count: 6,
-    bookmarked: false,
-    liked: false,
-    created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-    updated_at: new Date(Date.now() - 172800000).toISOString()
+    id: 2,
+    title: "Tips menjaga kesehatan mental",
+    content: "Luangkan waktu untuk dirimu sendiri setiap hari. Jangan ragu untuk meminta bantuan jika diperlukan.",
+    likes_count: 8,
+    author: "Admin",
+    created_at: new Date().toISOString()
   },
   {
-    _id: 'fallback-3',
-    id: 'fallback-3',
-    content: '🙏 Mencoba untuk bersyukur setiap hari membawa ketenangan pikiran yang luar biasa. Kadang hal-hal kecil seperti secangkir teh hangat atau senyuman orang asing bisa mengubah seluruh hari kita.',
-    author: {
-      _id: 'admin-3',
-      id: 'admin-3',
-      name: 'Mindful Soul',
-      avatar: null
-    },
-    likes: Array(18).fill().map((_, i) => ({ _id: `like-${i}` })),
-    comments: Array(10).fill().map((_, i) => ({ _id: `comment-${i}` })),
-    likes_count: 18,
-    comments_count: 10,
-    bookmarked: false,
-    liked: false,
-    created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-    updated_at: new Date(Date.now() - 259200000).toISOString()
+    id: 3,
+    title: "Kamu tidak sendiri",
+    content: "Banyak orang yang peduli dan siap mendengarkan ceritamu di sini.",
+    likes_count: 5,
+    author: "Admin",
+    created_at: new Date().toISOString()
   }
 ];
+
+
 
 class HomeModel {
   async getMoodHistory() {
@@ -116,27 +87,49 @@ class HomeModel {
   }
 
   async getPopularPosts() {
+    // Return fallback posts immediately for faster loading
+    const fastFallback = () => {
+      console.log('Model: Using fallback posts for faster loading');
+      return fallbackPosts;
+    };
+
     try {
       const token = localStorage.getItem('token');
+
+      // Use Promise.race to timeout quickly
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), 2000)
+      );
+
       let response;
 
       // Try authenticated endpoint first if user is logged in
       if (token && token !== 'null' && token !== 'undefined') {
         try {
-          response = await api.get('/safespace/posts?limit=10');
+          response = await Promise.race([
+            api.get('/safespace/posts?limit=3'), // Reduced limit for faster loading
+            timeoutPromise
+          ]);
         } catch (authError) {
-          // If auth fails, remove invalid token and fall back to public
+          // If auth fails, remove invalid token and fall back quickly
           if (authError.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
           }
-          response = null;
+          return fastFallback();
         }
       }
 
-      // If no authenticated response, try public endpoint
+      // If no authenticated response, try public endpoint with timeout
       if (!response) {
-        response = await api.get('/safespace/posts/public?limit=10');
+        try {
+          response = await Promise.race([
+            api.get('/safespace/posts/public?limit=3'),
+            timeoutPromise
+          ]);
+        } catch (publicError) {
+          return fastFallback();
+        }
       }
 
       const posts = response.data.posts || response.data || [];
@@ -153,12 +146,7 @@ class HomeModel {
       return popularPosts.length > 0 ? popularPosts : fallbackPosts;
     } catch (error) {
       console.error('Model: Error fetching popular posts:', error);
-      if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
-        return fallbackPosts;
-      }
-
-      // If public endpoint also fails, return fallback posts instead of throwing error
-      return fallbackPosts;
+      return fastFallback();
     }
   }
 }

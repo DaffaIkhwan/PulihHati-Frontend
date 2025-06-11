@@ -8,9 +8,9 @@ export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE_URL ||
            (import.meta.env.PROD ? 'https://pulih-hati-backend-production.up.railway.app/api' : 'http://localhost:5000/api'),
 
-  // Request timeout in milliseconds
+  // Request timeout in milliseconds - Reduced for faster loading
   TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT) ||
-          (import.meta.env.PROD ? 30000 : 15000), // Longer timeout for production
+          (import.meta.env.PROD ? 8000 : 5000), // Much shorter timeout for faster UX
 
   // App environment
   APP_ENV: import.meta.env.VITE_APP_ENV || (import.meta.env.PROD ? 'production' : 'development'),
@@ -98,8 +98,8 @@ console.log('🔧 API Configuration:', {
   }
 });
 
-// Test connection in debug mode or production for troubleshooting
-if (API_CONFIG.DEBUG || import.meta.env.PROD) {
+// Test connection only in debug mode to avoid slowing down production
+if (API_CONFIG.DEBUG && !import.meta.env.PROD) {
   testBackendConnection();
   testStaticAssets();
 }

@@ -63,7 +63,7 @@ export const formatDate = (dateInput, options = {}, locale = 'id-ID') => {
 
 /**
  * Format date for post display (with time or relative time for recent posts)
- * @param {string|Date} dateInput - Date input
+ * @param {string|Date} dateInput - Date input (WIB timestamps from backend)
  * @returns {string} Formatted date with time or relative time
  */
 export const formatPostDate = (dateInput) => {
@@ -73,6 +73,7 @@ export const formatPostDate = (dateInput) => {
     const date = new Date(dateInput);
     if (isNaN(date.getTime())) return 'Tanggal tidak valid';
 
+    // Get current time for accurate comparison since backend sends WIB timestamps
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
 
@@ -81,7 +82,7 @@ export const formatPostDate = (dateInput) => {
       return getRelativeTime(dateInput);
     }
 
-    // Show full date and time for older posts
+    // Show full date and time for older posts (displayed in WIB)
     return formatDate(dateInput, {
       day: 'numeric',
       month: 'long',
@@ -98,7 +99,7 @@ export const formatPostDate = (dateInput) => {
 
 /**
  * Format date for comment display (shorter format with relative time for recent comments)
- * @param {string|Date} dateInput - Date input
+ * @param {string|Date} dateInput - Date input (WIB timestamps from backend)
  * @returns {string} Formatted date for comments
  */
 export const formatCommentDate = (dateInput) => {
@@ -108,6 +109,7 @@ export const formatCommentDate = (dateInput) => {
     const date = new Date(dateInput);
     if (isNaN(date.getTime())) return 'Tanggal tidak valid';
 
+    // Get current time for accurate comparison since backend sends WIB timestamps
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
 
@@ -116,7 +118,7 @@ export const formatCommentDate = (dateInput) => {
       return getRelativeTime(dateInput);
     }
 
-    // Show short date format for older comments
+    // Show short date format for older comments (displayed in WIB)
     return formatDate(dateInput, {
       month: 'short',
       day: 'numeric',
@@ -144,18 +146,29 @@ export const formatCardDate = (dateInput) => {
 };
 
 /**
+ * Helper function to get current WIB time consistently
+ * @returns {Date} Current time in WIB
+ */
+const getWIBTime = () => {
+  const now = new Date();
+  const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000)); // Add 7 hours for WIB
+  return wibTime;
+};
+
+/**
  * Get relative time (e.g., "2 hours ago") with proper timezone handling
- * @param {string|Date} dateInput - Date input
+ * @param {string|Date} dateInput - Date input (WIB timestamps from backend)
  * @returns {string} Relative time string
  */
 export const getRelativeTime = (dateInput) => {
   try {
     if (!dateInput) return 'Waktu tidak tersedia';
 
-    // Parse date and ensure it's in the correct timezone
+    // Parse date - backend now sends WIB timestamps
     let date;
     if (typeof dateInput === 'string') {
-      // If it's an ISO string, parse it correctly
+      // Parse the WIB timestamp correctly
+      // Backend sends timestamps in WIB timezone format
       date = new Date(dateInput);
     } else {
       date = new Date(dateInput);
@@ -163,7 +176,8 @@ export const getRelativeTime = (dateInput) => {
 
     if (isNaN(date.getTime())) return 'Waktu tidak valid';
 
-    // Get current time in Jakarta timezone for accurate comparison
+    // Get current time for accurate comparison
+    // Since backend now sends WIB timestamps, we can compare directly with current time
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 

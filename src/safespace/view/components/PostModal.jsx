@@ -1,7 +1,28 @@
-import { X, Heart, MessageCircle, Send } from 'lucide-react';
+import { X, Heart, MessageCircle, Send, Edit3, Trash2, MoreHorizontal } from 'lucide-react';
 import { formatPostDate, formatCommentDate, getPostDate } from '../../../utils/dateUtils';
+import { useState, useRef, useEffect } from 'react';
 
-function PostModal({ post, user, newComment, submittingComment, onClose, onNewComment, onNewCommentChange }) {
+function PostModal({ post, user, newComment, submittingComment, onClose, onNewComment, onNewCommentChange, onEditComment, onDeleteComment }) {
+  const [editingComment, setEditingComment] = useState(null);
+  const [editCommentContent, setEditCommentContent] = useState('');
+  const [commentDropdowns, setCommentDropdowns] = useState({});
+  const dropdownRefs = useRef({});
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      Object.keys(dropdownRefs.current).forEach(commentId => {
+        if (dropdownRefs.current[commentId] && !dropdownRefs.current[commentId].contains(event.target)) {
+          setCommentDropdowns(prev => ({ ...prev, [commentId]: false }));
+        }
+      });
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   const getInitials = (name) => {
     if (!name) return 'A';
     return name
@@ -10,6 +31,58 @@ function PostModal({ post, user, newComment, submittingComment, onClose, onNewCo
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment.id || comment._id);
+    setEditCommentContent(comment.content);
+    setCommentDropdowns(prev => ({ ...prev, [comment.id || comment._id]: false }));
+  };
+
+  const handleSaveEditComment = async (commentId) => {
+    if (!editCommentContent.trim()) return;
+
+    try {
+      await onEditComment(commentId, editCommentContent.trim());
+      setEditingComment(null);
+      setEditCommentContent('');
+    } catch (error) {
+      console.error('Error saving comment edit:', error);
+    }
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingComment(null);
+    setEditCommentContent('');
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      try {
+        await onDeleteComment(commentId);
+        setCommentDropdowns(prev => ({ ...prev, [commentId]: false }));
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+      }
+    }
+  };
+
+  const toggleCommentDropdown = (commentId) => {
+    setCommentDropdowns(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }));
+  };
+
+  const canEditComment = (comment) => {
+    return user && comment.author && (user.id === comment.author.id || user._id === comment.author.id);
+  };
+
+  const canDeleteComment = (comment) => {
+    // User can delete if they are the comment author OR the post owner
+    const isCommentAuthor = user && comment.author && (user.id === comment.author.id || user._id === comment.author.id);
+    const isPostOwner = user && post.author && (user.id === post.author.id || user._id === post.author.id);
+    return isCommentAuthor || isPostOwner;
   };
 
 
@@ -92,12 +165,80 @@ function PostModal({ post, user, newComment, submittingComment, onClose, onNewCo
                   )}
                   <div className="flex-1 bg-gray-100 p-3 rounded-lg">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-medium text-black">{comment.author?.name || 'Anonymous'}</h4>
-                      <span className="text-xs text-gray-500">
-                        {formatCommentDate(getPostDate(comment))}
-                      </span>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-black">{comment.author?.name || 'Anonymous'}</h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">
+                            {formatCommentDate(getPostDate(comment))}
+                          </span>
+                          {comment.updated_at && comment.updated_at !== comment.created_at && (
+                            <span className="text-xs text-gray-400 italic">
+                              • edited {formatCommentDate(comment.updated_at)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {(canEditComment(comment) || canDeleteComment(comment)) && (
+                        <div className="relative" ref={el => dropdownRefs.current[comment.id || comment._id] = el}>
+                          <button
+                            onClick={() => toggleCommentDropdown(comment.id || comment._id)}
+                            className="p-1 hover:bg-gray-200 rounded transition-colors"
+                          >
+                            <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                          </button>
+                          {commentDropdowns[comment.id || comment._id] && (
+                            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[100px]">
+                              {canEditComment(comment) && (
+                                <button
+                                  onClick={() => handleEditComment(comment)}
+                                  className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <Edit3 className="h-3 w-3 mr-2 text-blue-500" />
+                                  Edit
+                                </button>
+                              )}
+                              {canDeleteComment(comment) && (
+                                <button
+                                  onClick={() => handleDeleteComment(comment.id || comment._id)}
+                                  className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-2" />
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-black mt-1">{comment.content}</p>
+                    {editingComment === (comment.id || comment._id) ? (
+                      <div className="mt-2">
+                        <textarea
+                          value={editCommentContent}
+                          onChange={(e) => setEditCommentContent(e.target.value)}
+                          className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
+                          rows="2"
+                          autoFocus
+                        />
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => handleSaveEditComment(comment.id || comment._id)}
+                            className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                            disabled={!editCommentContent.trim()}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEditComment}
+                            className="px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-black mt-1">{comment.content}</p>
+                    )}
                   </div>
                 </div>
               ))}
