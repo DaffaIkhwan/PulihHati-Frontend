@@ -44,12 +44,39 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 // This fixes the problem where login redirects to offline page
 console.log('🚫 Service Worker disabled to prevent offline redirect issues');
 
-// Unregister any existing service workers
+// Force unregister any existing service workers
 if ('serviceWorker' in navigator) {
+  // Immediate unregister
   navigator.serviceWorker.getRegistrations().then(registrations => {
-    registrations.forEach(registration => {
-      registration.unregister();
-      console.log('🗑️ Unregistered service worker:', registration.scope);
+    if (registrations.length > 0) {
+      console.log(`🗑️ Found ${registrations.length} service worker(s) to unregister`);
+      registrations.forEach(registration => {
+        registration.unregister().then(success => {
+          if (success) {
+            console.log('✅ Successfully unregistered service worker:', registration.scope);
+          } else {
+            console.log('❌ Failed to unregister service worker:', registration.scope);
+          }
+        });
+      });
+
+      // Force reload after unregistering
+      setTimeout(() => {
+        console.log('🔄 Reloading page to ensure clean state...');
+        window.location.reload();
+      }, 1000);
+    } else {
+      console.log('✅ No service workers found - clean state');
+    }
+  }).catch(error => {
+    console.error('❌ Error checking service workers:', error);
+  });
+
+  // Also listen for any new service worker registrations and block them
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('🚫 Blocking new service worker registration');
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(registration => registration.unregister());
     });
   });
 }
