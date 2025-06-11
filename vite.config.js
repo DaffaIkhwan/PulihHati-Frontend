@@ -95,11 +95,25 @@ const pwaConfig = {
     navigateFallback: '/offline.html',
     navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
     runtimeCaching: [
+      // Cache for Local Development API
       {
         urlPattern: /^http:\/\/localhost:5000\/api\//,
         handler: 'NetworkFirst',
         options: {
-          cacheName: 'api-cache',
+          cacheName: 'api-cache-local',
+          expiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 60 * 60 * 24 // 24 hours
+          },
+          networkTimeoutSeconds: 10
+        }
+      },
+      // Cache for Deployed API (Vercel)
+      {
+        urlPattern: /^https:\/\/pulih-hati-backend\.vercel\.app\/api\//,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'api-cache-deployed',
           expiration: {
             maxEntries: 100,
             maxAgeSeconds: 60 * 60 * 24 // 24 hours

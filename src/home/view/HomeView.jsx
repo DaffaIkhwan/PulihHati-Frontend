@@ -9,6 +9,7 @@ import SafeSpaceSection from './components/SafeSpaceSection';
 import AboutSection from './components/AboutSection';
 import Footer from './components/Footer';
 
+
 const quotes = [
   "Kesehatan mental sama pentingnya dengan kesehatan fisik",
   "Bersama kita bisa lebih kuat",
@@ -239,6 +240,8 @@ function HomeView() {
 
       {/* Footer */}
       <Footer />
+
+
     </div>
   );
 }

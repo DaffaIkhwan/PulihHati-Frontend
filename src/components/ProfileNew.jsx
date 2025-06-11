@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Camera, Save, User, Mail, Edit3, X } from 'lucide-react';
 import Navbar from './Navbar';
 import axios from 'axios';
-
-// API URL
-const API_URL = 'http://localhost:5000/api';
+import { API_CONFIG } from '../config/api.js';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
   headers: {
     'Content-Type': 'application/json'
   }

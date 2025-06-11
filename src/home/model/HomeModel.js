@@ -1,10 +1,10 @@
 import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api';
+import { API_CONFIG } from '../../config/api.js';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -87,10 +87,8 @@ const fallbackPosts = [
 
 class HomeModel {
   async getMoodHistory() {
-    console.log('Model: Fetching mood history');
     try {
       const response = await api.get('/mood/history/week');
-      console.log('Model: Mood history response:', response.data);
       return response.data.data;
     } catch (error) {
       console.error('Model: Error fetching mood history:', error);
@@ -102,13 +100,11 @@ class HomeModel {
   }
 
   async saveMood(moodLevel, entryDate) {
-    console.log('Model: Saving mood:', { moodLevel, entryDate });
     try {
       const response = await api.post('/mood/entry', {
         mood_level: moodLevel,
         entry_date: entryDate
       });
-      console.log('Model: Save mood response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Model: Error saving mood:', error);
@@ -120,22 +116,19 @@ class HomeModel {
   }
 
   async getPopularPosts() {
-    console.log('Model: Fetching popular posts');
     try {
       const token = localStorage.getItem('token');
       let response;
 
       // Try authenticated endpoint first if user is logged in
-      if (token) {
+      if (token && token !== 'null' && token !== 'undefined') {
         try {
-          console.log('Model: Trying authenticated endpoint for popular posts');
           response = await api.get('/safespace/posts?limit=10');
-          console.log('Model: Authenticated popular posts response:', response.data);
         } catch (authError) {
-          console.log('Model: Authenticated endpoint failed, falling back to public:', authError.message);
           // If auth fails, remove invalid token and fall back to public
           if (authError.response?.status === 401) {
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
           }
           response = null;
         }
@@ -143,12 +136,11 @@ class HomeModel {
 
       // If no authenticated response, try public endpoint
       if (!response) {
-        console.log('Model: Fetching popular posts from public endpoint');
         response = await api.get('/safespace/posts/public?limit=10');
-        console.log('Model: Public popular posts response:', response.data);
       }
 
       const posts = response.data.posts || response.data || [];
+
       const popularPosts = posts
         .filter(post => post.likes_count !== undefined || (post.likes && Array.isArray(post.likes)))
         .sort((a, b) => {
@@ -162,12 +154,10 @@ class HomeModel {
     } catch (error) {
       console.error('Model: Error fetching popular posts:', error);
       if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
-        console.log('Model: Using fallback posts due to network error');
         return fallbackPosts;
       }
 
       // If public endpoint also fails, return fallback posts instead of throwing error
-      console.log('Model: All endpoints failed, using fallback posts');
       return fallbackPosts;
     }
   }
