@@ -1,0 +1,16 @@
+# Netlify redirects (if deploying to Netlify)
+/*    /index.html   200
+
+# Handle API requests
+/api/*  https://pulih-hati-backend-production.up.railway.app/api/:splat  200
+
+# Handle static assets
+/favicon.ico  /favicon.ico  200
+/manifest.webmanifest  /manifest.webmanifest  200
+/sw.js  /sw.js  200
+/offline.html  /offline.html  200
+/*.png  /:splat.png  200
+/*.jpg  /:splat.jpg  200
+/*.jpeg  /:splat.jpeg  200
+/*.svg  /:splat.svg  200
+/*.ico  /:splat.ico  200

@@ -2,19 +2,21 @@
 // This file centralizes all API-related configuration
 
 // Get API base URL from environment variables
-// Fallback to localhost if not set
+// Fallback to Railway production if not set (for deployment)
 export const API_CONFIG = {
   // Base URL for API requests
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL ||
+           (import.meta.env.PROD ? 'https://pulih-hati-backend-production.up.railway.app/api' : 'http://localhost:5000/api'),
 
   // Request timeout in milliseconds
-  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000, // Increased timeout for Railway backend
+  TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT) ||
+          (import.meta.env.PROD ? 30000 : 15000), // Longer timeout for production
 
   // App environment
-  APP_ENV: import.meta.env.VITE_APP_ENV || 'development',
+  APP_ENV: import.meta.env.VITE_APP_ENV || (import.meta.env.PROD ? 'production' : 'development'),
 
   // Debug mode
-  DEBUG: import.meta.env.VITE_DEBUG === 'true',
+  DEBUG: import.meta.env.VITE_DEBUG === 'true' || (!import.meta.env.PROD && import.meta.env.DEV),
 };
 
 // Available backend options for easy switching
@@ -42,24 +44,64 @@ export const testBackendConnection = async () => {
       return true;
     } else {
       console.warn('⚠️ Backend responded with status:', response.status);
+      if (response.status === 404) {
+        console.error('🔍 404 Error: Backend endpoint not found. Check if Railway backend is deployed correctly.');
+      }
       return false;
     }
   } catch (error) {
     console.error('❌ Backend connection failed:', error.message);
+    if (error.name === 'AbortError') {
+      console.error('⏱️ Connection timeout: Backend took too long to respond');
+    }
     return false;
   }
 };
 
-// Log current configuration in development
-if (API_CONFIG.DEBUG) {
-  console.log('🔧 API Configuration:', {
-    baseUrl: API_CONFIG.BASE_URL,
-    timeout: API_CONFIG.TIMEOUT,
-    environment: API_CONFIG.APP_ENV
-  });
+// Test static assets
+export const testStaticAssets = () => {
+  const assets = [
+    '/favicon.ico',
+    '/manifest.webmanifest',
+    '/logo2.png',
+    '/offline.html'
+  ];
 
-  // Test connection in debug mode
+  assets.forEach(asset => {
+    fetch(asset)
+      .then(response => {
+        if (response.ok) {
+          console.log(`✅ Asset found: ${asset}`);
+        } else {
+          console.warn(`⚠️ Asset missing (${response.status}): ${asset}`);
+        }
+      })
+      .catch(error => {
+        console.error(`❌ Asset error: ${asset}`, error.message);
+      });
+  });
+};
+
+// Log current configuration for debugging
+console.log('🔧 API Configuration:', {
+  baseUrl: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
+  environment: API_CONFIG.APP_ENV,
+  debug: API_CONFIG.DEBUG,
+  isProd: import.meta.env.PROD,
+  isDev: import.meta.env.DEV,
+  envVars: {
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+    VITE_API_TIMEOUT: import.meta.env.VITE_API_TIMEOUT,
+    VITE_APP_ENV: import.meta.env.VITE_APP_ENV,
+    VITE_DEBUG: import.meta.env.VITE_DEBUG
+  }
+});
+
+// Test connection in debug mode or production for troubleshooting
+if (API_CONFIG.DEBUG || import.meta.env.PROD) {
   testBackendConnection();
+  testStaticAssets();
 }
 
 export default API_CONFIG;
