@@ -22,25 +22,44 @@ function MoodChart({ moodHistory }) {
 
   return (
     <div className="border-t border-stone-200 pt-4 sm:pt-6">
-      <h4 className="text-base sm:text-lg font-medium text-stone-800 mb-3 sm:mb-4 font-['Inter']">Mood 7 Hari Terakhir</h4>
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h4 className="text-base sm:text-lg font-medium text-stone-800 font-['Inter']">Mood 7 Hari Terakhir</h4>
+        <div className="text-xs text-stone-500 flex items-center gap-1">
+          <span>Hari ini</span>
+          <div className="w-2 h-2 bg-[#A1BA82] rounded-full"></div>
+          <span>→</span>
+        </div>
+      </div>
       <div className="flex items-end justify-between h-24 sm:h-32 lg:h-36 bg-stone-50 rounded-xl p-3 sm:p-4 overflow-x-auto">
-        {moodHistory.map((item) => {
+        {moodHistory.map((item, index) => {
           const chartValue = getMoodChartValue(item.mood);
           const maxHeight = window.innerWidth < 640 ? 60 : window.innerWidth < 1024 ? 80 : 100; // Responsive max height
+          const isToday = item.isToday || index === moodHistory.length - 1; // Today should be the last item
 
           return (
-            <div key={`${item.day}-${item.date}`} className="flex flex-col items-center min-w-0 flex-1">
+            <div key={`${item.day}-${item.date}`} className={`flex flex-col items-center min-w-0 flex-1 relative ${isToday ? 'ring-2 ring-[#A1BA82] ring-opacity-50 rounded-lg p-1' : ''}`}>
+              {/* Today indicator */}
+              {isToday && (
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                  <div className="w-2 h-2 bg-[#A1BA82] rounded-full animate-pulse"></div>
+                </div>
+              )}
+
               <div
-                className="w-4 sm:w-6 lg:w-8 rounded-t-lg mb-1 sm:mb-2 transition-all duration-500 ease-in-out"
+                className={`w-4 sm:w-6 lg:w-8 rounded-t-lg mb-1 sm:mb-2 transition-all duration-500 ease-in-out ${isToday ? 'shadow-lg' : ''}`}
                 style={{
                   height: chartValue > 0 ? `${(chartValue / maxChartValue) * maxHeight}px` : '8px',
                   backgroundColor: item.mood ? moodTypes.find(m => m.id === item.mood)?.chartColor || '#6B7280' : '#E5E7EB',
                   minHeight: '8px',
                   transform: item.hasEntry ? 'scale(1)' : 'scale(0.8)',
-                  opacity: item.hasEntry ? 1 : 0.5
+                  opacity: item.hasEntry ? 1 : 0.5,
+                  border: isToday ? '2px solid #A1BA82' : 'none'
                 }}
               ></div>
-              <div className="text-xs sm:text-xs text-stone-600 font-medium truncate w-full text-center">{item.day}</div>
+              <div className={`text-xs sm:text-xs font-medium truncate w-full text-center ${isToday ? 'text-[#A1BA82] font-bold' : 'text-stone-600'}`}>
+                {item.day}
+                {isToday && <span className="block text-[10px] text-[#A1BA82]">Hari Ini</span>}
+              </div>
               <div className="text-sm sm:text-base lg:text-lg mt-0.5 sm:mt-1 transition-all duration-300">
                 {item.emoji || '⚪'}
               </div>

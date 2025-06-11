@@ -110,6 +110,45 @@ class ChatbotPresenter {
     }
   }
 
+  // Handle button response (Ya/Tidak)
+  async handleButtonResponse(response) {
+    try {
+      // Create user message for the button response
+      const userMessage = this.model.createMessage(response, 'user', false);
+
+      // Add user message to state
+      const updatedMessages = [...this.state.messages, userMessage];
+      this.updateState({
+        messages: updatedMessages,
+        isTyping: true,
+        error: null
+      });
+
+      // Send message to backend
+      const botReplyText = await this.model.sendMessage(response);
+
+      // Create bot message
+      const botMessage = this.model.createMessage(botReplyText, 'bot', true);
+
+      // Add bot message to state
+      const finalMessages = [...updatedMessages, botMessage];
+      this.updateState({
+        messages: finalMessages,
+        isTyping: false
+      });
+
+      // Save chat history
+      this.model.saveChatHistory(finalMessages);
+
+    } catch (error) {
+      console.error('Error sending button response:', error);
+      this.updateState({
+        error: error.message || 'Failed to send response. Please try again.',
+        isTyping: false
+      });
+    }
+  }
+
   // Clear error
   clearError() {
     this.updateState({ error: null });

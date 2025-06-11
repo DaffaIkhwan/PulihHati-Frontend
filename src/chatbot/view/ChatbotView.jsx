@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, RotateCcw } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import ChatbotPresenter from "../presenter/ChatbotPresenter";
 
@@ -9,7 +9,9 @@ const ChatbotView = () => {
     inputText: '',
     isTyping: false,
     loading: false,
-    error: null
+    error: null,
+    clickedButtons: new Set(), // Track which messages had their buttons clicked
+    fadingButtons: new Set() // Track which buttons are fading out
   });
 
   const messagesEndRef = useRef(null);
@@ -53,6 +55,46 @@ const ChatbotView = () => {
     if (presenterRef.current) {
       presenterRef.current.handleKeyPress(e);
     }
+  };
+
+  const handleReset = () => {
+    if (presenterRef.current) {
+      // Temporarily set input to "reset" and send it
+      presenterRef.current.handleInputChange("reset");
+      presenterRef.current.handleSendMessage();
+    }
+  };
+
+  const handleButtonResponse = (response, messageId) => {
+    if (presenterRef.current) {
+      // First add to fading buttons for animation
+      setState(prevState => ({
+        ...prevState,
+        fadingButtons: new Set([...(prevState.fadingButtons || []), messageId])
+      }));
+
+      // After a short delay, add to clicked buttons to hide completely
+      setTimeout(() => {
+        setState(prevState => ({
+          ...prevState,
+          clickedButtons: new Set([...(prevState.clickedButtons || []), messageId]),
+          fadingButtons: new Set([...(prevState.fadingButtons || [])].filter(id => id !== messageId))
+        }));
+      }, 300); // 300ms fade out animation
+
+      presenterRef.current.handleButtonResponse(response);
+    }
+  };
+
+  // Check if message contains trigger phrases and buttons haven't been clicked
+  const shouldShowButtons = (message) => {
+    const triggerPhrases = ['mau aku bantu', 'ingin aku bantu', 'aku bantu kasih tips'];
+    const messageText = message.text.toLowerCase();
+
+    const hasTriggerPhrase = triggerPhrases.some(phrase => messageText.includes(phrase));
+    const buttonsNotClicked = !(state.clickedButtons && state.clickedButtons.has(message.id));
+
+    return message.sender === 'bot' && hasTriggerPhrase && buttonsNotClicked;
   };
 
   const formatTime = (date) => {
@@ -160,6 +202,53 @@ const ChatbotView = () => {
                   <span className="text-xs text-stone-500">
                     {formatTime(message.timestamp)}
                   </span>
+
+                  {/* Interactive buttons for trigger messages */}
+                  {shouldShowButtons(message) && (
+                    <div className={`mt-4 p-4 bg-gradient-to-r from-stone-50 to-stone-100 rounded-xl border-2 border-dashed border-stone-300 shadow-lg relative overflow-hidden transition-all duration-300 ${
+                      state.fadingButtons && state.fadingButtons.has(message.id)
+                        ? 'opacity-0 scale-95 transform'
+                        : 'opacity-100 scale-100'
+                    }`}>
+                      {/* Animated background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-stone-100 to-stone-200 opacity-50 animate-pulse"></div>
+
+                      {/* Floating particles effect */}
+                      <div className="absolute top-2 left-4 w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                      <div className="absolute top-3 right-6 w-1 h-1 bg-stone-500 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                      <div className="absolute bottom-2 left-8 w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                            <div className="w-2 h-2 bg-stone-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            <div className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                          </div>
+                          <span className="text-sm font-bold text-stone-700 animate-pulse">💬 Pilih jawaban Anda:</span>
+                        </div>
+                        <div className="flex gap-3 justify-end">
+                          <button
+                            onClick={() => handleButtonResponse('Ya', message.id)}
+                            className="relative px-6 py-3 bg-gradient-to-r from-[#A1BA82] to-[#A1BA82]/80 hover:from-[#A1BA82]/80 hover:to-[#A1BA82] text-white text-sm font-semibold rounded-full transition-all duration-300 shadow-lg transform hover:scale-105 active:scale-95 border border-[#A1BA82]/30"
+                          >
+                            <span className="relative z-10">✓ Ya</span>
+                            <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse"></div>
+                          </button>
+                          <button
+                            onClick={() => handleButtonResponse('Tidak', message.id)}
+                            className="relative px-6 py-3 bg-gradient-to-r from-[#4F3422] to-[#251404] hover:from-[#251404] hover:to-[#4F3422] text-white text-sm font-semibold rounded-full transition-all duration-300 shadow-lg transform hover:scale-105 active:scale-95 border border-[#4F3422]/30"
+                          >
+                            <span className="relative z-10">✗ Tidak</span>
+                            <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse"></div>
+                          </button>
+                        </div>
+                        <div className="text-center mt-2">
+                          <span className="text-xs text-stone-600 font-medium">👆 Klik salah satu untuk melanjutkan</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -198,11 +287,19 @@ const ChatbotView = () => {
               type="text"
               value={inputText}
               onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Send a message..."
               className="flex-1 bg-transparent text-sm text-stone-800 focus:outline-none placeholder-stone-500"
               disabled={isTyping}
             />
+            <button
+              onClick={handleReset}
+              disabled={isTyping}
+              className="p-2 rounded-full bg-gradient-to-r from-[#4F3422] to-[#251404] hover:from-[#251404] hover:to-[#4F3422] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg transform hover:scale-105 active:scale-95"
+              title="Reset Chat"
+            >
+              <RotateCcw className="w-4 h-4 text-white" />
+            </button>
             <button
               onClick={handleSendMessage}
               disabled={inputText.trim() === "" || isTyping}
