@@ -108,12 +108,12 @@ const pwaConfig = {
           networkTimeoutSeconds: 10
         }
       },
-      // Cache for Deployed API (Vercel)
+      // Cache for Production API (Railway)
       {
-        urlPattern: /^https:\/\/pulih-hati-backend\.vercel\.app\/api\//,
+        urlPattern: /^https:\/\/pulih-hati-backend-production\.up\.railway\.app\/api\//,
         handler: 'NetworkFirst',
         options: {
-          cacheName: 'api-cache-deployed',
+          cacheName: 'api-cache-railway',
           expiration: {
             maxEntries: 100,
             maxAgeSeconds: 60 * 60 * 24 // 24 hours
