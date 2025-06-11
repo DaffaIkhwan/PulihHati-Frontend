@@ -14,6 +14,7 @@
     "generate-pwa-assets": "pwa-assets-generator --preset minimal public/vite.svg"
   },
   "dependencies": {
+    "aos": "^2.3.4",
     "axios": "^1.9.0",
     "lucide-react": "^0.294.0",
     "path": "^0.12.7",
