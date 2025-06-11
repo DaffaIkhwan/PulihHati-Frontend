@@ -125,9 +125,9 @@ function PostCard({
         <div className="mt-4">
           <p className="text-stone-700 leading-relaxed">{post.content}</p>
         </div>
-        <div className="mt-5 flex space-x-3">
+        <div className="mt-5 flex flex-wrap gap-2 sm:gap-3">
           <button
-            className={`flex items-center px-3 py-2 rounded-full transition-all duration-200 ${
+            className={`flex items-center px-2 sm:px-3 py-1.5 sm:py-2 rounded-full transition-all duration-200 text-sm ${
               isReadOnly
                 ? 'text-stone-400 cursor-not-allowed'
                 : post.likes?.some(like => like.user === user?.id)
@@ -137,25 +137,25 @@ function PostCard({
             onClick={() => handleActionClick(onLike, post._id)}
             title={isReadOnly ? 'Login to like posts' : ''}
           >
-            <Heart className={`h-5 w-5 mr-1 ${!isReadOnly && post.likes?.some(like => like.user === user?.id) ? 'fill-current' : ''}`} />
+            <Heart className={`h-4 w-4 sm:h-5 sm:w-5 mr-1 ${!isReadOnly && post.likes?.some(like => like.user === user?.id) ? 'fill-current' : ''}`} />
             <span className="font-medium">
               {post.likes_count || (Array.isArray(post.likes) ? post.likes.length : 0) || 'Like'}
             </span>
           </button>
           <button
-            className={`text-stone-500 flex items-center px-3 py-2 rounded-full transition-all duration-200 ${
+            className={`text-stone-500 flex items-center px-2 sm:px-3 py-1.5 sm:py-2 rounded-full transition-all duration-200 text-sm ${
               isReadOnly ? 'cursor-not-allowed' : 'hover:bg-stone-100'
             }`}
             onClick={() => handleActionClick(onCommentClick, post)}
             title={isReadOnly ? 'Login to comment' : ''}
           >
-            <MessageCircle className="h-5 w-5 mr-1" />
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1" />
             <span className="font-medium">
               {post.comments_count || (Array.isArray(post.comments) ? post.comments.length : 0) || 'Comment'}
             </span>
           </button>
           <button
-            className={`flex items-center px-3 py-2 rounded-full transition-all duration-200 ${
+            className={`flex items-center px-2 sm:px-3 py-1.5 sm:py-2 rounded-full transition-all duration-200 text-sm ${
               isReadOnly
                 ? 'text-stone-400 cursor-not-allowed'
                 : post.bookmarked
@@ -166,7 +166,7 @@ function PostCard({
             title={isReadOnly ? 'Login to save posts' : ''}
           >
             <Bookmark
-              className={`h-5 w-5 mr-1 ${
+              className={`h-4 w-4 sm:h-5 sm:w-5 mr-1 ${
                 !isReadOnly && post.bookmarked ? 'fill-current text-amber-700' : ''
               } ${!isReadOnly && bookmarkAnimations[post._id || post.id] ? 'animate-bookmark' : ''}`}
             />

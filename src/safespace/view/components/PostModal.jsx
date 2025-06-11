@@ -12,6 +12,8 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
       .slice(0, 2);
   };
 
+
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -57,11 +59,11 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
               <div className="flex items-center gap-4 mt-3 text-sm text-stone-500">
                 <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
-                  <span>{post.likes?.length || 0} likes</span>
+                  <span>{post.likes_count || (Array.isArray(post.likes) ? post.likes.length : 0) || 0} likes</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
-                  <span>{post.comments?.length || 0} comments</span>
+                  <span>{post.comments_count || (Array.isArray(post.comments) ? post.comments.length : 0) || 0} comments</span>
                 </div>
               </div>
             </div>
@@ -70,11 +72,13 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
 
         {/* Comments Section */}
         <div className="flex-1 overflow-y-auto p-4">
-          <h3 className="font-medium text-black mb-4">Comments</h3>
+          <h3 className="font-medium text-black mb-4">
+            Comments ({post.comments_count || (Array.isArray(post.comments) ? post.comments.length : 0) || 0})
+          </h3>
           {Array.isArray(post.comments) && post.comments.length > 0 ? (
             <div className="space-y-4">
               {post.comments.map(comment => (
-                <div key={comment._id} className="flex items-start">
+                <div key={comment._id || comment.id} className="flex items-start">
                   {comment.author?.avatar ? (
                     <img
                       src={comment.author.avatar}
@@ -82,13 +86,13 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
                       className="h-10 w-10 rounded-full mr-2"
                     />
                   ) : (
-                    <div className="h-10 w-10 rounded-full mr-2 bg-amber-100 flex items-center justify-center text-amber-800 font-semibold">
+                    <div className="h-10 w-10 rounded-full mr-2 bg-amber-100 flex items-center justify-center text-amber-800 font-semibold text-sm">
                       {getInitials(comment.author?.name)}
                     </div>
                   )}
                   <div className="flex-1 bg-gray-100 p-3 rounded-lg">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-medium text-black">{comment.author?.name}</h4>
+                      <h4 className="font-medium text-black">{comment.author?.name || 'Anonymous'}</h4>
                       <span className="text-xs text-gray-500">
                         {formatCommentDate(getPostDate(comment))}
                       </span>
@@ -99,7 +103,10 @@ function PostModal({ post, user, newComment, onClose, onNewComment, onNewComment
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">No comments yet. Be the first to comment!</p>
+            <div className="text-center py-8">
+              <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No comments yet. Be the first to comment!</p>
+            </div>
           )}
         </div>
 
