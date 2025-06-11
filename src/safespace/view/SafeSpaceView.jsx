@@ -400,6 +400,8 @@ SafeSpaceView.propTypes = {
     handleSaveEdit: PropTypes.func.isRequired,
     handleCancelEdit: PropTypes.func.isRequired,
     handleDeletePost: PropTypes.func.isRequired,
+    handleEditComment: PropTypes.func.isRequired,
+    handleDeleteComment: PropTypes.func.isRequired,
     updateEditContent: PropTypes.func.isRequired,
     loadMorePosts: PropTypes.func.isRequired
   }).isRequired

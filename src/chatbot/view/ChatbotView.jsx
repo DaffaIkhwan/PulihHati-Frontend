@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, RotateCcw } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import ChatbotPresenter from "../presenter/ChatbotPresenter";
 
@@ -16,6 +17,7 @@ const ChatbotView = () => {
 
   const messagesEndRef = useRef(null);
   const presenterRef = useRef(null);
+  const location = useLocation();
 
   // Initialize presenter
   useEffect(() => {
@@ -29,6 +31,39 @@ const ChatbotView = () => {
       }
     };
   }, []);
+
+  // Auto-reset chatbot when user navigates away from chatbot page
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Send reset message invisibly when user navigates away
+      if (presenterRef.current && location.pathname === '/chatbot') {
+        try {
+          // Send reset message silently (without updating UI)
+          presenterRef.current.model.sendMessage('reset');
+        } catch (error) {
+          console.log('Auto-reset failed:', error);
+        }
+      }
+    };
+
+    // Add event listener for page unload
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Cleanup function to send reset when component unmounts (route change)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+
+      // Send reset when leaving chatbot page
+      if (presenterRef.current) {
+        try {
+          // Send reset message silently
+          presenterRef.current.model.sendMessage('reset');
+        } catch (error) {
+          console.log('Auto-reset on route change failed:', error);
+        }
+      }
+    };
+  }, [location.pathname]);
 
   // Auto scroll to bottom
   useEffect(() => {
