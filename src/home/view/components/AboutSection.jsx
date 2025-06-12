@@ -86,7 +86,7 @@ function AboutSection() {
                 <div className="bg-white/80 p-4 sm:p-6 rounded-2xl shadow-lg border border-[#A1BA82]/20 hover:shadow-xl transition-all duration-300">
                   <div className="flex items-center space-x-3 sm:space-x-4">
                     <div className="w-3 h-3 bg-[#A1BA82] rounded-full animate-pulse delay-500 flex-shrink-0"></div>
-                    <span className="text-sm sm:text-lg font-light font-['Crimson_Text',_serif]">Forum SafeSpace untuk berbagi dan saling mendukung</span>
+                    <span className="text-sm sm:text-lg font-light font-['Crimson_Text',_serif]">Forum Safe Space untuk berbagi dan saling mendukung</span>
                   </div>
                 </div>
               </div>
