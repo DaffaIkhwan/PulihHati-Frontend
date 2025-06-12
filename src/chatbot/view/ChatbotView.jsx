@@ -123,7 +123,7 @@ const ChatbotView = () => {
 
   // Check if message contains trigger phrases and buttons haven't been clicked
   const shouldShowButtons = (message) => {
-    const triggerPhrases = ['mau aku bantu', 'ingin aku bantu', 'aku bantu kasih tips'];
+    const triggerPhrases = ['mau aku bantu', 'ingin aku bantu', 'aku bantu kasih tips', 'jika kamu mau', 'apakah kamu'];
     const messageText = message.text.toLowerCase();
 
     const hasTriggerPhrase = triggerPhrases.some(phrase => messageText.includes(phrase));
