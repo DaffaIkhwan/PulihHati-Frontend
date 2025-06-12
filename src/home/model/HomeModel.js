@@ -31,7 +31,7 @@ const fallbackPosts = [
   {
     id: 1,
     title: "Selamat datang di SafeSpace!",
-    content: "Bagikan cerita dan dukunganmu di sini. Semua postingan bersifat anonim dan aman.",
+    content: "Bagikan cerita dan dukunganmu di sini.",
     likes_count: 10,
     author: "Admin",
     created_at: new Date().toISOString()
